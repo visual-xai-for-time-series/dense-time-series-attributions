@@ -1,0 +1,10 @@
+{
+    "short_name": "DPVTSA",
+    "name": "Dense Pixel Visualization for Time Series Attributions",
+    "icons": [],
+    "start_url": ".",
+    "display": "standalone",
+    "theme_color": "#000000",
+    "background_color": "#ffffff"
+}
+
