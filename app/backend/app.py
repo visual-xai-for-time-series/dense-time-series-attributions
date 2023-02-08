@@ -143,10 +143,11 @@ async def read_data(file_name: str, start: int = 0, end: int = -1, sorting_name:
         tmp = data['data']
 
     # slice to start and end and calculate width
-    width = 0
+    length = 0
     for k in tmp:
-        width += len(tmp[k][0])
+        length += len(tmp[k][0])
         tmp[k] = tmp[k][start:end]
+    tmp['length'] = length
 
     return tmp
 

@@ -10,7 +10,9 @@ import './App.css';
 
 import * as d3 from 'd3';
 
-import { RawData } from './components/RawData';
+import { Stage } from '@pixi/react';
+
+import { BaseDense } from './components/BaseDense';
 import { BaseDenseWithHist } from './components/BaseDenseWithHist';
 
 function App() {
@@ -21,27 +23,66 @@ function App() {
 
     const ref = useRef();
 
+    const client_width =
+        (window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth) -
+        20;
+    const client_height =
+        (window.innerHeight ||
+            document.documentElement.clientHeight ||
+            document.body.clientHeight) - 20;
+
     useEffect(() => {
         d3.json(
-            'http://127.0.0.1:8000/data/forda?start=0&end=500&sorting_name=activations_test_hist_euclidean'
+            'http://127.0.0.1:8000/data/forda?start=0&end=1000&sorting_name=raw_test_hist_pearson'
         )
             .then((data) => {
                 console.log(Object.keys(data));
                 console.log(data);
 
+                const length = data.length;
+
+                const width_raw =
+                    (client_width * (data.raw_test[0].length + data.raw_test_hist[0].length)) /
+                    length;
+                const width_act =
+                    (client_width *
+                        (data.activations_test[0].length + data.activations_test_hist[0].length)) /
+                    length;
+                const width_att =
+                    (client_width *
+                        (data.attributions_test[0].length +
+                            data.attributions_test_hist[0].length)) /
+                    length;
+
+                const pos_raw = 0;
+                const pos_act = pos_raw + width_raw;
+                const pos_att = pos_act + width_act;
+
                 let attributions = {
                     data: data.attributions_test,
                     hist: data.attributions_test_hist,
+                    width: width_att,
+                    height: client_height,
+                    pos_x: pos_att,
                 };
                 setAttributions(attributions);
 
                 let activations = {
                     data: data.activations_test,
                     hist: data.activations_test_hist,
+                    width: width_act,
+                    height: client_height,
+                    pos_x: pos_act,
                 };
                 setActivations(activations);
 
-                let rawdata = data.raw_test;
+                let rawdata = {
+                    data: data.raw_test,
+                    hist: data.raw_test_hist,
+                    width: width_raw,
+                    height: client_height,
+                    pos_x: pos_raw,
+                };
                 setRawData(rawdata);
             })
             .catch((reason) => {
@@ -55,19 +96,18 @@ function App() {
 
     return (
         <div className="App" ref={ref}>
-            <Container fluid className="noPadding noMargin">
-                <Row className="noPadding noMargin">
-                    <Col className="noPadding noMargin">
-                        <RawData rawdata={rawdata} />
-                    </Col>
-                    <Col className="noPadding noMargin">
-                        <BaseDenseWithHist data={activations} />
-                    </Col>
-                    <Col className="noPadding noMargin">
-                        <BaseDenseWithHist data={attributions} />
-                    </Col>
-                </Row>
-            </Container>
+            <Stage
+                width={client_width}
+                height={client_height}
+                options={{
+                    backgroundColor: 0xffffff,
+                    antialias: true,
+                }}
+            >
+                <BaseDenseWithHist data={rawdata}></BaseDenseWithHist>
+                <BaseDenseWithHist data={activations}></BaseDenseWithHist>
+                <BaseDenseWithHist data={attributions}></BaseDenseWithHist>
+            </Stage>
         </div>
     );
 }
