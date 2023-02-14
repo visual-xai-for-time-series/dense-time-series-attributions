@@ -26,6 +26,6 @@ export function densePixel(data, g, start_x, obj_width, obj_height, color = d3.i
         });
     });
 
-    console.log(data);
+    return true;
 }
 

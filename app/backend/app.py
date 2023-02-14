@@ -7,6 +7,7 @@ import scipy as sp
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+
 origins = [
     'http://localhost',
     'http://localhost:3000',
@@ -37,105 +38,23 @@ def load_file(file_name):
     return data
 
 
-def sorting(data, key):
-    o = np.array(data[key])
-
-    def euclidean(a, b):
-        return np.linalg.norm(a - b)
-        
-    def spearman(a, b):
-        return sp.stats.spearmanr(a, b).statistic
-
-    def pearson(a, b):
-        return sp.stats.pearsonr(a, b).statistic
-
-    def bhattacharyya(a, b):
-        return -np.log(np.sum([np.sqrt(a[i] * b[i]) for i in range(len(a))]))
-    
-    def wasserstein(a, b):
-        return sp.stats.wasserstein_distance(a, b)
-
-
-    n, k = o.shape
-    dist = np.zeros((n, n), dtype=float)
-    for i in range(n):
-        for j in range(i, n):
-            dist[i, j] = euclidean(o[i], o[j])
-
-    full_dist = dist + np.transpose(dist) - 2 * np.diag(dist)
-    
-    min_sample = np.argmin(np.sum(full_dist, axis=1))
-    print(min_sample)
-    sorting = np.argsort(full_dist[min_sample])
-    print(sorting)
-    
-    tmp = {}
-    for k in data:
-        tmp[k] = np.array(data[k])[sorting].tolist()
-
-    return tmp
-
-
-def clustering(data, key):
-    o = np.array(data[key])
-    
-    def pearson(a, b):
-        return sp.stats.pearsonr(a, b).statistic
-    
-    n, k = o.shape
-    dist_pearson = np.zeros((n, n), dtype=float)
-    for i in range(n):
-        for j in range(i, n):
-            dist_pearson[i, j] = pearson(o[i], o[j])
-    
-    full_dist_pearson = 1 - dist_pearson + np.transpose(dist_pearson) - np.diag(np.diag(dist_pearson))
-    
-    # full_dist_pearson = sp.spatial.distance.squareform(full_dist_pearson)
-    linkage = sp.cluster.hierarchy.linkage(full_dist_pearson, method='ward', optimal_ordering=True)
-    dendrogram = sp.cluster.hierarchy.dendrogram(linkage, get_leaves=True, no_plot=True)
-    sorting = dendrogram['leaves']
-    
-    tmp = {}
-    for k in data:
-        tmp[k] = np.array(data[k])[sorting].tolist()
-
-    return tmp
-
-
-def clustering_direct(data, key):
-    o = np.array(data[key])
-    
-    def normalized_euclidean(a, b):
-        return np.sqrt(np.sum((a / np.amax(a) - b / np.amax(b)) ** 2)) / len(a)
-    
-    if len(o.shape) < 2:
-        return None
-
-    n, m = o.shape
-    dist = np.zeros((n, n), dtype=float)
-    for i in range(n):
-        for j in range(i, n):
-            dist[i, j] = normalized_euclidean(o[i], o[j])
-    
-    dist_square = sp.spatial.distance.squareform(dist + np.transpose(dist))
-
-    linkage = sp.cluster.hierarchy.linkage(dist_square, method='ward', optimal_ordering=True)
-    dendrogram = sp.cluster.hierarchy.dendrogram(linkage, get_leaves=True, no_plot=True)
-    sorting = dendrogram['leaves']
-    
-    tmp = {}
-    for k in data:
-        tmp[k] = np.array(data[k])[sorting].tolist()
-
-    return tmp
-
-
-@app.get('/data/{file_name}')
-async def read_data(file_name: str, start: int = 0, end: int = -1, sorting_name: str = 'raw_test'):
+@app.get('/api/data/{file_name}')
+async def read_data(file_name: str, start: int = 0, end: int = -1, ordering_data: str = '', ordering_method: str = ''):
     data = load_file(file_name)
+    
+    if ordering_data == '':
+        ordering_data = list(data['cluster_sorting'].keys())[0]
+        
+    if ordering_method == '':
+        ordering_method = list(data['cluster_sorting'][ordering_data].keys())[0]
 
-    if sorting_name in data['cluster_sorting']:
-        sorting = data['cluster_sorting'][sorting_name]
+    if ordering_data in data['cluster_sorting']:
+        print(f'Ordering: {ordering_data}')
+        ordering_methods = list(data['cluster_sorting'][ordering_data].keys())
+        if ordering_method in ordering_methods:
+            print(f'Method: {ordering_method}')
+            sorting = data['cluster_sorting'][ordering_data][ordering_method]
+
         tmp = {}
         for k in data['data']:
             tmp[k] = np.array(data['data'][k])[sorting].tolist()
@@ -143,24 +62,35 @@ async def read_data(file_name: str, start: int = 0, end: int = -1, sorting_name:
         tmp = data['data']
 
     # slice to start and end and calculate width
+    ret_tmp = {}
+    max_samples = 0
     length = 0
     for k in tmp:
+        if k == 'meta':
+            continue
+        max_samples = max(max_samples, len(tmp[k]))
         length += len(tmp[k][0])
-        tmp[k] = tmp[k][start:end]
-    tmp['length'] = length
+        ret_tmp[k] = tmp[k][start:end]
 
-    return tmp
+    summary_data_std = np.std(data['data'][ordering_data], axis=1).tolist()
+    ret_tmp['meta'] = {
+        'length': length,
+        'max_samples': max_samples,
+        'orderings': {d: list(data['cluster_sorting'][d].keys()) for d in data['cluster_sorting']},
+        'cur_ordering_data': ordering_data,
+        'cur_ordering_method': ordering_method,
+        'summary_data': summary_data_std,
+    }
+
+    return ret_tmp
 
 
 @app.get('/')
-async def location():
-    return {'message': f'It works!'}
+async def home():
+    return 'It works!'
 
 
 if __name__ == '__main__':
-    print('Init clusterings')
-    init_clusterings('forda')
-    
     print('Start app')
     import uvicorn
     uvicorn.run(app, host='0.0.0.0', port=8000)
