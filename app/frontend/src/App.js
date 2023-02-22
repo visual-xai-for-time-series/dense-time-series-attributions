@@ -86,10 +86,10 @@ function App() {
         setVisHeight(Math.max(end - start, client_height));
         console.log(`${start}&${end}&${client_height}`);
 
-        const ordering_data = new_parameters.ordering_data;
-        const ordering_method = new_parameters.ordering_method;
+        const clustering_base = new_parameters.clustering_base;
+        const clustering_method = new_parameters.clustering_method;
         setUrlParam(
-            `forda?start=${start}&end=${end}&ordering_data=${ordering_data}&ordering_method=${ordering_method}`
+            `forda?start=${start}&end=${end}&clustering_base=${clustering_base}&clustering_method=${clustering_method}`
         );
     };
 
@@ -100,35 +100,43 @@ function App() {
         console.log(url);
         d3.json(url)
             .then((data) => {
-                const orderings = data.meta.orderings;
+                const cluster_sortings = data.meta.cluster_sortings;
                 const max_samples = data.meta.max_samples;
-                const cur_ordering_data = data.meta.cur_ordering_data;
-                const cur_ordering_method = data.meta.cur_ordering_method;
+                const cur_clustering_base = data.meta.cur_clustering_base;
+                const cur_clustering_method = data.meta.cur_clustering_method;
                 const summary_data = data.meta.summary_data;
+                const cur_stage = data.meta.cur_stage;
+                const cur_attribution_method = data.meta.cur_attribution_method;
+                const stages = data.meta.stages;
+                const attribution_methods = data.meta.attribution_methods;
 
                 console.log(data.meta);
 
                 setParameters({
-                    orderings: orderings,
+                    cluster_sortings: cluster_sortings,
                     max_samples: max_samples,
-                    cur_ordering_data: cur_ordering_data,
-                    cur_ordering_method: cur_ordering_method,
+                    cur_clustering_base: cur_clustering_base,
+                    cur_clustering_method: cur_clustering_method,
+                    cur_stage: cur_stage,
+                    cur_attribution_method: cur_attribution_method,
                     summary_data: summary_data,
+                    stages: stages,
+                    attribution_methods: attribution_methods,
                 });
+
+                console.log(parameters);
 
                 const length = data.meta.length;
 
                 const width_raw =
-                    (client_width * (data.raw_test[0].length + data.raw_test_hist[0].length)) /
-                    length;
+                    (client_width * (data.raw[0].length + data.raw_hist[0].length)) / length;
                 const width_act =
                     (client_width *
-                        (data.activations_test[0].length + data.activations_test_hist[0].length)) /
+                        (data.activations[0].length + data.activations_hist[0].length)) /
                     length;
                 const width_att =
                     (client_width *
-                        (data.attributions_test[0].length +
-                            data.attributions_test_hist[0].length)) /
+                        (data.attributions[0].length + data.attributions_hist[0].length)) /
                     length;
 
                 const pos_raw = 0;
@@ -136,8 +144,8 @@ function App() {
                 const pos_att = pos_act + width_act;
 
                 let attributions = {
-                    data: MinMaxNorm(data.attributions_test),
-                    hist: MinMaxNorm(data.attributions_test_hist),
+                    data: MinMaxNorm(data.attributions),
+                    hist: MinMaxNorm(data.attributions_hist),
                     width: width_att,
                     height: vis_height,
                     pos_x: pos_att,
@@ -145,8 +153,8 @@ function App() {
                 setAttributions(attributions);
 
                 let activations = {
-                    data: MinMaxNorm(data.activations_test),
-                    hist: MinMaxNorm(data.activations_test_hist),
+                    data: MinMaxNorm(data.activations),
+                    hist: MinMaxNorm(data.activations_hist),
                     width: width_act,
                     height: vis_height,
                     pos_x: pos_act,
@@ -154,8 +162,8 @@ function App() {
                 setActivations(activations);
 
                 let rawdata = {
-                    data: MinMaxNorm(data.raw_test),
-                    hist: MinMaxNorm(data.raw_test_hist),
+                    data: MinMaxNorm(data.raw),
+                    hist: MinMaxNorm(data.raw_hist),
                     width: width_raw,
                     height: vis_height,
                     pos_x: pos_raw,
