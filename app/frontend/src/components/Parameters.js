@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-import Slider from '@mui/material/Slider';
 import Grid from '@mui/material/Grid';
 import Item from '@mui/material/Grid';
 import InputLabel from '@mui/material/InputLabel';
@@ -20,61 +19,53 @@ function capitalize(str) {
     return ret.join(' ');
 }
 
-function decapitalize(str) {
-    return str.replaceAll(' ', '_').toLowerCase();
-}
+// function decapitalize(str) {
+//     return str.replaceAll(' ', '_').toLowerCase();
+// }
 
 export function Parameters({ input_data, output_data }) {
-    console.log(input_data);
-
-    const cur_clustering_base = input_data.cur_clustering_base
-        ? input_data.cur_clustering_base
-        : '';
-    const cur_clustering_method = input_data.cur_clustering_method
-        ? input_data.cur_clustering_method
-        : '';
-    const cur_stage = input_data.cur_stage ? input_data.cur_stage : '';
-    const cur_attribution_method = input_data.cur_attribution_method
-        ? input_data.cur_attribution_method
-        : '';
-
     const summary_data = input_data.summary_data;
 
-    const cluster_sortings = input_data.cluster_sortings
-        ? Object.keys(input_data.cluster_sortings)
-        : [];
-    const cluster_sorting_methods = input_data.cluster_sortings ? input_data.cluster_sortings : {};
-    const stages = input_data.stages ? input_data.stages : [];
-    const attribution_methods = input_data.attribution_methods
-        ? input_data.attribution_methods
-        : [];
-
-    console.log(cur_stage);
+    const cluster_sortings = Object.keys(input_data.cluster_sortings);
+    const cluster_sorting_methods = input_data.cluster_sortings;
+    const stages = input_data.stages;
+    const attribution_methods = input_data.attribution_methods;
 
     const max_samples = input_data.max_samples ? input_data.max_samples : 100;
 
     const [samples_idc, setSamplesIdc] = useState([0, 100]);
 
-    const [stage, setStage] = useState(cur_stage);
-    const [attribution_method, setAttributionMethod] = useState(cur_attribution_method);
+    const [clustering_base, setClusteringBase] = useState('');
+    const [clustering_method, setClusteringMethod] = useState('');
 
-    const [clustering_base, setClusteringBase] = useState(cur_clustering_base);
-    const [clustering_method, setClusteringMethod] = useState(cur_clustering_method);
+    const [stage, setStage] = useState('');
+    const [attribution_method, setAttributionMethod] = useState('');
 
     const [cur_clustering_methods, setCurClusteringMethods] = useState([]);
 
-    // setStage(cur_stage);
-    console.log(stage);
+    useEffect(() => {
+        const cur_clustering_base = input_data.cur_clustering_base;
+        const cur_clustering_method = input_data.cur_clustering_method;
+        const cur_stage = input_data.cur_stage;
+        const cur_attribution_method = input_data.cur_attribution_method;
+        const cur_clustering_methods = cluster_sorting_methods[cur_clustering_base] || [];
 
-    const handleSliderChange = (newValue) => {
-        setSamplesIdc(newValue);
+        setClusteringBase(cur_clustering_base);
+        setCurClusteringMethods(cur_clustering_methods);
+        setClusteringMethod(cur_clustering_method);
+        setStage(cur_stage);
+        setAttributionMethod(cur_attribution_method);
+    }, [input_data, cluster_sorting_methods]);
+
+    const handleSliderChange = (new_value) => {
+        setSamplesIdc(new_value);
     };
 
     const handleStage = (event) => {
         setStage(event.target.value);
     };
 
-    const handleAttributionethod = (event) => {
+    const handleAttributionMethod = (event) => {
         setAttributionMethod(event.target.value);
     };
 
@@ -90,9 +81,11 @@ export function Parameters({ input_data, output_data }) {
 
     const handleButton = (_) => {
         const new_parameters = {
+            stage: stage,
             sample_idc: samples_idc,
             clustering_base: clustering_base,
             clustering_method: clustering_method,
+            attribution_method: attribution_method,
         };
         output_data(new_parameters);
     };
@@ -132,9 +125,9 @@ export function Parameters({ input_data, output_data }) {
                         <Select
                             labelId="stage-select-label"
                             id="stage-select"
-                            value={stage}
                             label="Stage"
                             onChange={handleStage}
+                            value={stage}
                         >
                             {stages.length > 0
                                 ? stages.map((name) => (
@@ -164,7 +157,8 @@ export function Parameters({ input_data, output_data }) {
                             id="attribution-method-select"
                             value={attribution_method}
                             label="Attribution Method Data"
-                            onChange={handleAttributionethod}
+                            onChange={handleAttributionMethod}
+                            displayEmpty
                         >
                             {attribution_methods.length > 0
                                 ? attribution_methods.map((name) => (

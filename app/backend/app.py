@@ -74,13 +74,8 @@ async def read_data(file_name: str, start: int = 0, end: int = -1, stage: str = 
     cluster_sorting_defaults['attributions'] = cluster_sorting_defaults['attributions'][f'{attribution_method}']
 
     sorting = cluster_sorting.get(stage).get_clusterings(clustering_base, clustering_method, attribution_method)
-    print(sorting)
-    
     stages = data.get_set()
-    print(stages)
-    
     attribution_methods = data.get(stage).get_attributions()
-    print(attribution_methods)
     
     tmp = {}
     for k in collected_data:

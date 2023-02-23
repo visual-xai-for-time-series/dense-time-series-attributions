@@ -42,15 +42,23 @@ function App() {
 
     const [error, setError] = useState(null);
 
-    const [parameters, setParameters] = useState({});
+    const [parameters, setParameters] = useState({
+        cluster_sortings: {},
+        max_samples: null,
+        cur_clustering_base: '',
+        cur_clustering_method: '',
+        cur_stage: '',
+        cur_attribution_method: '',
+        summary_data: null,
+        stages: [],
+        attribution_methods: [],
+    });
 
     const [url_param, setUrlParam] = useState('forda?start=0&end=100');
 
     const [loading, setLoading] = useState(true);
 
     const ref = useRef();
-
-    const base_url = process.env.REACT_APP_API_URL ? process.env.REACT_APP_API_URL : '';
 
     const client_width =
         (window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth) -
@@ -84,20 +92,23 @@ function App() {
         const end = new_parameters.sample_idc[1];
 
         setVisHeight(Math.max(end - start, client_height));
-        console.log(`${start}&${end}&${client_height}`);
 
+        const stage = new_parameters.stage;
         const clustering_base = new_parameters.clustering_base;
         const clustering_method = new_parameters.clustering_method;
+        const attribution_method = new_parameters.attribution_method;
         setUrlParam(
-            `forda?start=${start}&end=${end}&clustering_base=${clustering_base}&clustering_method=${clustering_method}`
+            `forda?start=${start}&end=${end}&stage=${stage}&clustering_base=${clustering_base}&clustering_method=${clustering_method}&attribution_method=${attribution_method}`
         );
     };
 
     useEffect(() => {
         setLoading(true);
 
+        const base_url = process.env.REACT_APP_API_URL ? process.env.REACT_APP_API_URL : '';
         const url = base_url + '/api/data/' + url_param;
         console.log(url);
+
         d3.json(url)
             .then((data) => {
                 const cluster_sortings = data.meta.cluster_sortings;
@@ -110,8 +121,6 @@ function App() {
                 const stages = data.meta.stages;
                 const attribution_methods = data.meta.attribution_methods;
 
-                console.log(data.meta);
-
                 setParameters({
                     cluster_sortings: cluster_sortings,
                     max_samples: max_samples,
@@ -123,8 +132,6 @@ function App() {
                     stages: stages,
                     attribution_methods: attribution_methods,
                 });
-
-                console.log(parameters);
 
                 const length = data.meta.length;
 
@@ -175,7 +182,7 @@ function App() {
             .catch((reason) => {
                 setError(reason);
             });
-    }, [url_param]);
+    }, [url_param]); // eslint-disable-line react-hooks/exhaustive-deps
 
     if (error) {
         return <div>Error: {error.message}</div>;
