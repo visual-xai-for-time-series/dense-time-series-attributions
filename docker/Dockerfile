@@ -6,8 +6,6 @@ WORKDIR /app
 
 COPY ./app/frontend /app
 
-RUN cat /app/package.json
-
 RUN yarn
 RUN yarn build
 

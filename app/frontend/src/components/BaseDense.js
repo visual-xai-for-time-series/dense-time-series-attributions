@@ -6,21 +6,27 @@ import { densePixel } from './DensePixel';
 
 import { Graphics, Container } from '@pixi/react';
 
-export function BaseDense({ data }) {
+export function BaseDense({ data, event }) {
     let data_normalized = null;
     if (data && data.data) {
-        data_normalized = [];
-        data.data.forEach((a) => {
-            let extent = d3.extent(a);
-            let a_tmp = d3.scaleLinear().domain(extent).range([0, 1]);
-            data_normalized.push(a.map(a_tmp));
-        });
+        data_normalized = data.data;
     }
 
     const draw = useCallback(
         (g) => {
             if (data && data.data) {
-                densePixel(data_normalized, g, data.pos_x, data.width, data.height);
+                g.clear();
+
+                densePixel(
+                    data_normalized,
+                    g,
+                    data.pos_x,
+                    data.width,
+                    data.height,
+                    data.color_data
+                );
+
+                event(true);
             }
         },
         [data, data_normalized]

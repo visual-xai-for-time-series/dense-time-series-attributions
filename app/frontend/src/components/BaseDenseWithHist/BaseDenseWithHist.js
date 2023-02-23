@@ -24,14 +24,21 @@ export function BaseDenseWithHist({ data, event }) {
                 const attr_width = data.width * 0.9;
                 const hist_width = data.width * 0.1;
 
-                densePixel(data_normalized, g, data.pos_x, attr_width, data.height);
+                densePixel(
+                    data_normalized,
+                    g,
+                    data.pos_x,
+                    attr_width,
+                    data.height,
+                    data.color_data
+                );
                 densePixel(
                     hist_normalized,
                     g,
-                    data.pos_x + attr_width,
+                    data.pos_x + attr_width + 1,
                     hist_width,
                     data.height,
-                    d3.interpolateBlues
+                    data.color_hist
                 );
                 event(true);
             }

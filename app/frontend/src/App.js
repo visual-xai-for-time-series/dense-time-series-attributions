@@ -22,14 +22,30 @@ import CircularProgress from '@mui/material/CircularProgress';
 // import { BaseDense } from './components/BaseDense';
 import { BaseDenseWithHist } from './components/BaseDenseWithHist/BaseDenseWithHist';
 import { Parameters } from './components/Parameters';
+import { BaseDense } from './components/BaseDense';
 
 function MinMaxNorm(data) {
-    let data_normalized = [];
+    const data_normalized = [];
 
-    data.forEach((a) => {
-        let extent = d3.extent(a);
-        let a_tmp = d3.scaleLinear().domain(extent).range([0, 1]);
-        data_normalized.push(a.map(a_tmp));
+    data.forEach((d) => {
+        const ext = d3.extent(d);
+        const scaler = d3.scaleLinear().domain(ext).range([0, 1]);
+        data_normalized.push(d.map(scaler));
+    });
+
+    return data_normalized;
+}
+
+function LogNorm(data) {
+    const data_normalized = [];
+
+    data.forEach((d) => {
+        const d_fixed = d.map((e) => {
+            return e + 0.000000001;
+        });
+        const ext = d3.extent(d_fixed);
+        const scaler = d3.scaleSqrt().domain(ext).range([0, 1]);
+        data_normalized.push(d_fixed.map(scaler));
     });
 
     return data_normalized;
@@ -39,6 +55,7 @@ function App() {
     const [attributions, setAttributions] = useState(null);
     const [activations, setActivations] = useState(null);
     const [rawdata, setRawData] = useState(null);
+    const [labels, setLabels] = useState(null);
 
     const [error, setError] = useState(null);
 
@@ -69,13 +86,16 @@ function App() {
             document.body.clientHeight) - 60;
     const [vis_height, setVisHeight] = useState(client_height);
 
-    const loadElements = { attributions: false, activations: false, rawdata: false };
+    const loadElements = { labels: false, attributions: false, activations: false, rawdata: false };
     const handleLoading = (key, param) => {
         loadElements[key] = param;
 
         if (Object.values(loadElements).every((e) => e === true)) {
             setLoading(false);
         }
+    };
+    const labelElement = (param) => {
+        handleLoading('labels', param);
     };
     const attributionElement = (param) => {
         handleLoading('attributions', param);
@@ -133,7 +153,7 @@ function App() {
                     attribution_methods: attribution_methods,
                 });
 
-                const length = data.meta.length;
+                const length = data.meta.length + 8;
 
                 const width_raw =
                     (client_width * (data.raw[0].length + data.raw_hist[0].length)) / length;
@@ -145,14 +165,18 @@ function App() {
                     (client_width *
                         (data.attributions[0].length + data.attributions_hist[0].length)) /
                     length;
+                const width_lab = (client_width * data.labels_pred[0].length) / length;
 
                 const pos_raw = 0;
-                const pos_act = pos_raw + width_raw;
-                const pos_att = pos_act + width_act;
+                const pos_act = pos_raw + width_raw + 2;
+                const pos_att = pos_act + width_act + 2;
+                const pos_lab = pos_att + width_att + 2;
 
                 let attributions = {
                     data: MinMaxNorm(data.attributions),
-                    hist: MinMaxNorm(data.attributions_hist),
+                    hist: LogNorm(data.attributions_hist),
+                    color_data: 'interpolateRdBu',
+                    color_hist: 'interpolateOranges',
                     width: width_att,
                     height: vis_height,
                     pos_x: pos_att,
@@ -161,7 +185,9 @@ function App() {
 
                 let activations = {
                     data: MinMaxNorm(data.activations),
-                    hist: MinMaxNorm(data.activations_hist),
+                    hist: LogNorm(data.activations_hist),
+                    color_data: 'interpolateOranges',
+                    color_hist: 'interpolateOranges',
                     width: width_act,
                     height: vis_height,
                     pos_x: pos_act,
@@ -170,12 +196,23 @@ function App() {
 
                 let rawdata = {
                     data: MinMaxNorm(data.raw),
-                    hist: MinMaxNorm(data.raw_hist),
+                    hist: LogNorm(data.raw_hist),
+                    color_data: 'interpolateRdBu',
+                    color_hist: 'interpolateOranges',
                     width: width_raw,
                     height: vis_height,
                     pos_x: pos_raw,
                 };
                 setRawData(rawdata);
+
+                let labels = {
+                    data: data.labels_pred,
+                    color_data: 'interpolatePuOr',
+                    width: width_lab,
+                    height: vis_height,
+                    pos_x: pos_lab,
+                };
+                setLabels(labels);
 
                 console.log('Finish');
             })
@@ -215,6 +252,7 @@ function App() {
                                 data={attributions}
                                 event={attributionElement}
                             ></BaseDenseWithHist>
+                            <BaseDense data={labels} event={labelElement}></BaseDense>
                         </Stage>
                     </Item>
                 </Grid>
