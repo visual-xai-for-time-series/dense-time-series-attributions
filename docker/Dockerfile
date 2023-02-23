@@ -6,10 +6,10 @@ WORKDIR /app
 
 COPY ./app/frontend /app
 
+RUN cat /app/package.json
+
 RUN yarn
 RUN yarn build
-
-CMD yarn build
 
 # main container
 FROM python:3.10

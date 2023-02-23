@@ -72,7 +72,7 @@ export function D3Slider({ input_data, output_data }) {
                 .attr('stroke-width', 1.5)
                 .attr('d', line);
         }
-    }, [input_data.max_samples, input_data.summary_data]);
+    }, [input_data.max_samples, input_data.summary_data]); // eslint-disable-line react-hooks/exhaustive-deps
 
     return <div ref={wrapper_ref}></div>;
 }
