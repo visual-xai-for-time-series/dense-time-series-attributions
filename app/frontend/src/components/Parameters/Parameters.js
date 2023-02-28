@@ -8,7 +8,7 @@ import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
 import Button from '@mui/material/Button';
 
-import { D3Slider } from './D3Slider/D3Slider';
+import { D3Slider } from '../D3Slider/D3Slider';
 
 function capitalize(str) {
     const ret = [];

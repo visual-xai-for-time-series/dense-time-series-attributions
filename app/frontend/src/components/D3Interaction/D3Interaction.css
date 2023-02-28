@@ -1,0 +1,12 @@
+.interaction svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.interaction .tooltip {
+    position: absolute;
+    pointer-events: none;
+    color: #000;
+}
+

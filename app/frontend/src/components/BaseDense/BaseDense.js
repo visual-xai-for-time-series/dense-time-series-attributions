@@ -1,8 +1,6 @@
 import React, { useCallback } from 'react';
 
-import * as d3 from 'd3';
-
-import { densePixel } from './DensePixel';
+import { densePixel } from '../Helper/DensePixel';
 
 import { Graphics, Container } from '@pixi/react';
 

@@ -1,8 +1,6 @@
 import React, { useCallback } from 'react';
 
-import * as d3 from 'd3';
-
-import { densePixel } from './../DensePixel';
+import { densePixel } from '../Helper/DensePixel';
 
 import { Graphics, Container } from '@pixi/react';
 
@@ -21,8 +19,11 @@ export function BaseDenseWithHist({ data, event }) {
             if (data && data.data && data_normalized && hist_normalized) {
                 g.clear();
 
-                const attr_width = data.width * 0.9;
-                const hist_width = data.width * 0.1;
+                const intra_margin = data.intra_margin;
+                const width = data.width - intra_margin;
+
+                const attr_width = width * 0.9;
+                const hist_width = width * 0.1;
 
                 densePixel(
                     data_normalized,
@@ -35,7 +36,7 @@ export function BaseDenseWithHist({ data, event }) {
                 densePixel(
                     hist_normalized,
                     g,
-                    data.pos_x + attr_width + 1,
+                    data.pos_x + attr_width + intra_margin,
                     hist_width,
                     data.height,
                     data.color_hist

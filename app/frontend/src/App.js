@@ -19,45 +19,17 @@ import { alpha } from '@mui/material';
 
 import CircularProgress from '@mui/material/CircularProgress';
 
-// import { BaseDense } from './components/BaseDense';
+import { MinMaxNorm, SqrtNorm } from './components/Helper/Helper';
 import { BaseDenseWithHist } from './components/BaseDenseWithHist/BaseDenseWithHist';
-import { Parameters } from './components/Parameters';
-import { BaseDense } from './components/BaseDense';
-
-function MinMaxNorm(data) {
-    const data_normalized = [];
-
-    data.forEach((d) => {
-        const ext = d3.extent(d);
-        const scaler = d3.scaleLinear().domain(ext).range([0, 1]);
-        data_normalized.push(d.map(scaler));
-    });
-
-    return data_normalized;
-}
-
-function LogNorm(data) {
-    const data_normalized = [];
-
-    data.forEach((d) => {
-        const d_fixed = d.map((e) => {
-            return e + 0.000000001;
-        });
-        const ext = d3.extent(d_fixed);
-        const scaler = d3.scaleSqrt().domain(ext).range([0, 1]);
-        data_normalized.push(d_fixed.map(scaler));
-    });
-
-    return data_normalized;
-}
+import { Parameters } from './components/Parameters/Parameters';
+import { BaseDense } from './components/BaseDense/BaseDense';
+import { D3Interaction } from './components/D3Interaction/D3Interaction';
 
 function App() {
     const [attributions, setAttributions] = useState(null);
     const [activations, setActivations] = useState(null);
     const [rawdata, setRawData] = useState(null);
     const [labels, setLabels] = useState(null);
-
-    const [error, setError] = useState(null);
 
     const [parameters, setParameters] = useState({
         cluster_sortings: {},
@@ -70,6 +42,16 @@ function App() {
         stages: [],
         attribution_methods: [],
     });
+
+    const [interactions, setInteractions] = useState({
+        x_pos: null,
+        y_pos: null,
+        width: null,
+        height: null,
+        data: null,
+    });
+
+    const [error, setError] = useState(null);
 
     const [url_param, setUrlParam] = useState('forda?start=0&end=100');
 
@@ -124,6 +106,11 @@ function App() {
 
     useEffect(() => {
         setLoading(true);
+        window.scrollTo({
+            top: 0,
+            left: 0,
+            behavior: 'smooth',
+        });
 
         const base_url = process.env.REACT_APP_API_URL ? process.env.REACT_APP_API_URL : '';
         const url = base_url + '/api/data/' + url_param;
@@ -131,6 +118,8 @@ function App() {
 
         d3.json(url)
             .then((data) => {
+                console.log(data);
+
                 const cluster_sortings = data.meta.cluster_sortings;
                 const max_samples = data.meta.max_samples;
                 const cur_clustering_base = data.meta.cur_clustering_base;
@@ -140,6 +129,7 @@ function App() {
                 const cur_attribution_method = data.meta.cur_attribution_method;
                 const stages = data.meta.stages;
                 const attribution_methods = data.meta.attribution_methods;
+                const sorting_idc = data.meta.sorting_idc;
 
                 setParameters({
                     cluster_sortings: cluster_sortings,
@@ -153,66 +143,84 @@ function App() {
                     attribution_methods: attribution_methods,
                 });
 
-                const length = data.meta.length + 8;
+                const inter_margin = 5;
+                const intra_margin = 3;
 
-                const width_raw =
-                    (client_width * (data.raw[0].length + data.raw_hist[0].length)) / length;
-                const width_act =
-                    (client_width *
-                        (data.activations[0].length + data.activations_hist[0].length)) /
-                    length;
-                const width_att =
-                    (client_width *
-                        (data.attributions[0].length + data.attributions_hist[0].length)) /
-                    length;
-                const width_lab = (client_width * data.labels_pred[0].length) / length;
+                const length = data.meta.length + intra_margin * 4 + inter_margin * 4;
+
+                const raw_length = data.raw[0].length + data.raw_hist[0].length + intra_margin;
+                const width_raw = (client_width * raw_length) / length;
+
+                const act_length =
+                    data.activations[0].length + data.activations_hist[0].length + intra_margin;
+                const width_act = (client_width * act_length) / length;
+
+                const att_length =
+                    data.attributions[0].length + data.attributions_hist[0].length + intra_margin;
+                const width_att = (client_width * att_length) / length;
+
+                const lab_length = data.labels_pred[0].length + intra_margin;
+                const width_lab = (client_width * lab_length) / length;
 
                 const pos_raw = 0;
-                const pos_act = pos_raw + width_raw + 2;
-                const pos_att = pos_act + width_act + 2;
-                const pos_lab = pos_att + width_att + 2;
+                const pos_act = pos_raw + width_raw + inter_margin;
+                const pos_att = pos_act + width_act + inter_margin;
+                const pos_lab = pos_att + width_att + inter_margin;
 
                 let attributions = {
                     data: MinMaxNorm(data.attributions),
-                    hist: LogNorm(data.attributions_hist),
+                    hist: SqrtNorm(data.attributions_hist),
                     color_data: 'interpolateRdBu',
                     color_hist: 'interpolateOranges',
                     width: width_att,
                     height: vis_height,
                     pos_x: pos_att,
+                    intra_margin: intra_margin,
                 };
                 setAttributions(attributions);
 
                 let activations = {
                     data: MinMaxNorm(data.activations),
-                    hist: LogNorm(data.activations_hist),
+                    hist: SqrtNorm(data.activations_hist),
                     color_data: 'interpolateOranges',
                     color_hist: 'interpolateOranges',
                     width: width_act,
                     height: vis_height,
                     pos_x: pos_act,
+                    intra_margin: intra_margin,
                 };
                 setActivations(activations);
 
                 let rawdata = {
                     data: MinMaxNorm(data.raw),
-                    hist: LogNorm(data.raw_hist),
+                    hist: SqrtNorm(data.raw_hist),
                     color_data: 'interpolateRdBu',
                     color_hist: 'interpolateOranges',
                     width: width_raw,
                     height: vis_height,
                     pos_x: pos_raw,
+                    intra_margin: intra_margin,
                 };
                 setRawData(rawdata);
 
                 let labels = {
-                    data: data.labels_pred,
-                    color_data: 'interpolatePuOr',
+                    data: MinMaxNorm(data.labels_pred),
+                    color_data: 'interpolateBlues',
                     width: width_lab,
                     height: vis_height,
                     pos_x: pos_lab,
                 };
                 setLabels(labels);
+
+                const rect = ref.current._canvas.getBoundingClientRect();
+                const interactions = {
+                    x_pos: rect.left,
+                    y_pos: rect.top,
+                    width: rect.width,
+                    height: rect.height,
+                    sorting_idc: sorting_idc,
+                };
+                setInteractions(interactions);
 
                 console.log('Finish');
             })
@@ -227,7 +235,7 @@ function App() {
 
     return (
         <div className="App">
-            <Grid container spacing={0} ref={ref}>
+            <Grid container spacing={0}>
                 <Grid item xs={12}>
                     <Item>
                         <Stage
@@ -235,10 +243,13 @@ function App() {
                             height={vis_height}
                             options={{
                                 backgroundColor: 0xffffff,
+                                // backgroundColor: 0x000000,
+                                backgroundAlpha: 1,
                                 antialias: true,
                             }}
                             raf={false}
                             renderOnComponentChange={true}
+                            ref={ref}
                         >
                             <BaseDenseWithHist
                                 data={rawdata}
@@ -254,6 +265,10 @@ function App() {
                             ></BaseDenseWithHist>
                             <BaseDense data={labels} event={labelElement}></BaseDense>
                         </Stage>
+                        <D3Interaction
+                            input_data={interactions}
+                            output_data={labelElement}
+                        ></D3Interaction>
                     </Item>
                 </Grid>
                 <Parameters input_data={parameters} output_data={changeUrlParam}></Parameters>

@@ -91,6 +91,7 @@ async def read_data(file_name: str, start: int = 0, end: int = -1, stage: str = 
         max_samples = max(max_samples, len(tmp[k]))
         length += len(tmp[k][0])
         ret_tmp[k] = tmp[k][start:end]
+    tmp_sorting = sorting[start:end].tolist()
 
     summary_data_std = np.std(tmp[clustering_base], axis=1).tolist()
     ret_tmp['meta'] = {
@@ -104,6 +105,7 @@ async def read_data(file_name: str, start: int = 0, end: int = -1, stage: str = 
         'cur_clustering_base': clustering_base,
         'cur_clustering_method': clustering_method,
         'summary_data': summary_data_std,
+        'sorting_idc': tmp_sorting,
     }
 
     return ret_tmp
