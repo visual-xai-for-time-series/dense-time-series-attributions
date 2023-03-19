@@ -5,6 +5,8 @@ import * as d3 from 'd3';
 export function D3Slider({ input_data, output_data }) {
     const wrapper_ref = useRef(null);
 
+    console.log(input_data);
+
     useEffect(() => {
         const wrapper_element = d3.select(wrapper_ref.current);
         wrapper_element.selectAll('*').remove();
@@ -45,15 +47,8 @@ export function D3Slider({ input_data, output_data }) {
 
         svg.append('g').call(brush).call(brush.move, start_range.map(x));
 
-        const tick_width = 50;
-        const x_axis = (g) =>
-            g
-                .attr('transform', `translate(0,${height - margin.bottom - 20})`)
-                .call(d3.axisBottom(x).ticks(width / tick_width));
-        svg.append('g').call(x_axis);
-
-        if (input_data.summary_data) {
-            const summary_data = input_data.summary_data;
+        if (input_data.cur_summary_data) {
+            const summary_data = input_data.cur_summary_data;
             const extent = d3.extent(summary_data);
 
             const y = d3.scaleLinear(extent, [margin.top, height - margin.bottom - 20]).nice();
@@ -71,8 +66,15 @@ export function D3Slider({ input_data, output_data }) {
                 .attr('stroke', 'steelblue')
                 .attr('stroke-width', 1.5)
                 .attr('d', line);
+
+            const tick_width = 50;
+            const x_axis = (g) =>
+                g
+                    .attr('transform', `translate(0,${height - margin.bottom - 20})`)
+                    .call(d3.axisBottom(x).ticks(width / tick_width));
+            svg.append('g').call(x_axis);
         }
-    }, [input_data.max_samples, input_data.summary_data]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [input_data.max_samples, input_data.cur_summary_data]); // eslint-disable-line react-hooks/exhaustive-deps
 
     return <div ref={wrapper_ref}></div>;
 }

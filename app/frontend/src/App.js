@@ -19,7 +19,7 @@ import { alpha } from '@mui/material';
 
 import CircularProgress from '@mui/material/CircularProgress';
 
-import { MinMaxNorm, SqrtNorm } from './components/Helper/Helper';
+import { MinMaxNorm, SqrtNorm, softmax } from './components/Helper/Helper';
 import { BaseDenseWithHist } from './components/BaseDenseWithHist/BaseDenseWithHist';
 import { Parameters } from './components/Parameters/Parameters';
 import { BaseDense } from './components/BaseDense/BaseDense';
@@ -146,7 +146,15 @@ function App() {
                 const inter_margin = 5;
                 const intra_margin = 3;
 
-                const length = data.meta.length + intra_margin * 4 + inter_margin * 4;
+                const data_length =
+                    data.raw[0].length +
+                    data.raw_hist[0].length +
+                    data.activations[0].length +
+                    data.activations_hist[0].length +
+                    data.attributions[0].length +
+                    data.attributions_hist[0].length +
+                    data.labels_pred[0].length;
+                const length = data_length + intra_margin * 3 + inter_margin * 3;
 
                 const raw_length = data.raw[0].length + data.raw_hist[0].length + intra_margin;
                 const width_raw = (client_width * raw_length) / length;
@@ -159,7 +167,7 @@ function App() {
                     data.attributions[0].length + data.attributions_hist[0].length + intra_margin;
                 const width_att = (client_width * att_length) / length;
 
-                const lab_length = data.labels_pred[0].length + intra_margin;
+                const lab_length = data.labels_pred[0].length;
                 const width_lab = (client_width * lab_length) / length;
 
                 const pos_raw = 0;
@@ -204,8 +212,8 @@ function App() {
                 setRawData(rawdata);
 
                 let labels = {
-                    data: MinMaxNorm(data.labels_pred),
-                    color_data: 'interpolateBlues',
+                    data: data.labels_pred.map(softmax),
+                    color_data: 'interpolateViridis',
                     width: width_lab,
                     height: vis_height,
                     pos_x: pos_lab,

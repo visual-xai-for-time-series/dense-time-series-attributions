@@ -27,7 +27,7 @@ export function BaseDense({ data, event }) {
                 event(true);
             }
         },
-        [data, data_normalized]
+        [data, data_normalized] // eslint-disable-line react-hooks/exhaustive-deps
     );
 
     return (

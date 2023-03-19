@@ -54,28 +54,29 @@ dataset_test = FordADataset(X_test, y_test_ohe)
 
 dataloader_train = DataLoader(dataset_train, batch_size=120, shuffle=True)
 dataloader_train_not_shuffled = DataLoader(dataset_train, batch_size=120, shuffle=False)
-dataloader_test = DataLoader(dataset_test, batch_size=12, shuffle=False)
+dataloader_test = DataLoader(dataset_test, batch_size=120, shuffle=False)
 
 class SimpleCNN(nn.Module):
     def __init__(self):
         super(SimpleCNN, self).__init__()
         
         self.conv1 = nn.Sequential(
-            nn.Conv1d(1, 5, kernel_size=3, stride=2),
+            nn.Conv1d(1, 10, kernel_size=3, stride=1),
             nn.ReLU(inplace=True)
         )
         self.conv2 = nn.Sequential(
-            nn.Conv1d(5, 10, kernel_size=3, stride=2),
+            nn.Conv1d(10, 50, kernel_size=3, stride=1),
+            nn.MaxPool1d(3),
             nn.ReLU(inplace=True)
         )
         self.conv3 = nn.Sequential(
-            nn.Conv1d(10, 50, kernel_size=3, stride=2),
-            nn.Dropout(0.5),
+            nn.Conv1d(50, 100, kernel_size=3, stride=1),
+            nn.MaxPool1d(3),
             nn.ReLU(inplace=True)
         )
         
         self.fc1 = nn.Sequential(
-            nn.Linear(50 * 61, 100),
+            nn.Linear(100 * 54, 100),
             nn.Dropout(0.5),
             nn.ReLU(inplace=True)
         )
@@ -149,7 +150,7 @@ loss = nn.CrossEntropyLoss()
 # Learning the model on the data
 ##################
 
-epochs = 250
+epochs = 500
 
 for epoch in range(epochs):
     train_loss = trainer(model, dataloader_train, loss)

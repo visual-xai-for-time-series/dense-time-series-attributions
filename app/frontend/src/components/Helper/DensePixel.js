@@ -1,36 +1,6 @@
 import * as d3 from 'd3';
 
-function round(x) {
-    return Number.parseFloat(x).toFixed(2);
-}
-
-function colorToSigned24Bit(s) {
-    return (parseInt(s.substr(1), 16) << 8) / 256;
-}
-
-function colorStringToD3Color(color) {
-    if (color === 'interpolateRdBu') {
-        return d3.interpolateRdBu;
-    }
-    if (color === 'interpolateOranges') {
-        return d3.interpolateOranges;
-    }
-    if (color === 'interpolatePuOr') {
-        return d3.interpolatePuOr;
-    }
-    if (color === 'interpolateBlues') {
-        return d3.interpolateBlues;
-    }
-    if (color === 'interpolateTurbo') {
-        return d3.interpolateTurbo;
-    }
-    if (color === 'interpolateViridis') {
-        return d3.interpolateViridis;
-    }
-    if (color === 'interpolateMagma') {
-        return d3.interpolateMagma;
-    }
-}
+import { round, colorStringToD3Color, colorToSigned24Bit } from './Helper';
 
 export function densePixel(data, g, start_x, obj_width, obj_height, color = d3.interpolateRdBu) {
     const len_w = data[0].length;

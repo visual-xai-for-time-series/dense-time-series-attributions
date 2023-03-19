@@ -8,24 +8,14 @@ import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
 import Button from '@mui/material/Button';
 
+import ModelTraining from '@mui/icons-material/ModelTraining';
+
 import { D3Slider } from '../D3Slider/D3Slider';
+import { Information } from '../Helper/Information';
 
-function capitalize(str) {
-    const ret = [];
-    const word_array = str.replaceAll('_', ' ').split(' ');
-    word_array.forEach((word) => {
-        ret.push(word[0].toUpperCase() + word.slice(1));
-    });
-    return ret.join(' ');
-}
-
-// function decapitalize(str) {
-//     return str.replaceAll(' ', '_').toLowerCase();
-// }
+import { capitalize } from '../Helper/Helper';
 
 export function Parameters({ input_data, output_data }) {
-    const summary_data = input_data.summary_data;
-
     const cluster_sortings = Object.keys(input_data.cluster_sortings);
     const cluster_sorting_methods = input_data.cluster_sortings;
     const stages = input_data.stages;
@@ -43,6 +33,12 @@ export function Parameters({ input_data, output_data }) {
 
     const [cur_clustering_methods, setCurClusteringMethods] = useState([]);
 
+    const [slider_parameters, setSliderParameters] = useState({
+        max_samples: 100,
+        start_range: [0, 100],
+        cur_summary_data: null,
+    });
+
     useEffect(() => {
         const cur_clustering_base = input_data.cur_clustering_base;
         const cur_clustering_method = input_data.cur_clustering_method;
@@ -55,7 +51,17 @@ export function Parameters({ input_data, output_data }) {
         setClusteringMethod(cur_clustering_method);
         setStage(cur_stage);
         setAttributionMethod(cur_attribution_method);
-    }, [input_data, cluster_sorting_methods]);
+
+        const summary_data = input_data.summary_data;
+        const cur_summary_data = summary_data ? summary_data[cur_clustering_base] : null;
+
+        const cur_slider_parameters = {
+            max_samples: max_samples,
+            start_range: samples_idc,
+            cur_summary_data: cur_summary_data,
+        };
+        setSliderParameters(cur_slider_parameters);
+    }, [input_data, cluster_sorting_methods]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleSliderChange = (new_value) => {
         setSamplesIdc(new_value);
@@ -70,9 +76,21 @@ export function Parameters({ input_data, output_data }) {
     };
 
     const handleClusteringBase = (event) => {
-        setClusteringBase(event.target.value);
-        setCurClusteringMethods(cluster_sorting_methods[event.target.value]);
-        setClusteringMethod(cluster_sorting_methods[event.target.value][0]);
+        const cur_clustering_base = event.target.value;
+        console.log(cur_clustering_base);
+
+        setClusteringBase(cur_clustering_base);
+        setCurClusteringMethods(cluster_sorting_methods[cur_clustering_base]);
+        setClusteringMethod(cluster_sorting_methods[cur_clustering_base][0]);
+
+        const summary_data = input_data.summary_data;
+        const cur_summary_data = summary_data[cur_clustering_base];
+        const cur_slider_parameters = {
+            max_samples: max_samples,
+            start_range: samples_idc,
+            cur_summary_data: cur_summary_data,
+        };
+        setSliderParameters(cur_slider_parameters);
     };
 
     const handleClusteringMethod = (event) => {
@@ -90,12 +108,6 @@ export function Parameters({ input_data, output_data }) {
         output_data(new_parameters);
     };
 
-    const slider_params = {
-        max_samples: max_samples,
-        start_range: samples_idc,
-        summary_data: summary_data,
-    };
-
     return (
         <Grid
             container
@@ -104,136 +116,167 @@ export function Parameters({ input_data, output_data }) {
             alignItems="center"
             justifyContent="center"
         >
-            <Grid item xs={4}>
+            <Grid item xs={6}>
                 <Item>
                     <D3Slider
-                        input_data={slider_params}
+                        input_data={slider_parameters}
                         output_data={handleSliderChange}
                     ></D3Slider>
                 </Item>
             </Grid>
-            <Grid item xs={1}>
+            <Grid item xs={6}>
                 <Item>
-                    <FormControl
-                        sx={{
-                            m: 1,
-                            minWidth: 100,
-                        }}
-                        size="small"
+                    <Grid
+                        container
+                        spacing={0}
+                        sx={{ mr: 0, ml: 0 }}
+                        alignItems="center"
+                        justifyContent="center"
                     >
-                        <InputLabel id="stage-select-label">Stage</InputLabel>
-                        <Select
-                            labelId="stage-select-label"
-                            id="stage-select"
-                            label="Stage"
-                            onChange={handleStage}
-                            value={stage}
-                        >
-                            {stages.length > 0
-                                ? stages.map((name) => (
-                                      <MenuItem key={name} value={name}>
-                                          {capitalize(name)}
-                                      </MenuItem>
-                                  ))
-                                : null}
-                        </Select>
-                    </FormControl>
-                </Item>
-            </Grid>
-            <Grid item xs={2}>
-                <Item>
-                    <FormControl
-                        sx={{
-                            m: 1,
-                            minWidth: 200,
-                        }}
-                        size="small"
-                    >
-                        <InputLabel id="attribution-method-select-label">
-                            Attribution Methods
-                        </InputLabel>
-                        <Select
-                            labelId="attribution-method-select-label"
-                            id="attribution-method-select"
-                            value={attribution_method}
-                            label="Attribution Method Data"
-                            onChange={handleAttributionMethod}
-                            displayEmpty
-                        >
-                            {attribution_methods.length > 0
-                                ? attribution_methods.map((name) => (
-                                      <MenuItem key={name} value={name}>
-                                          {capitalize(name)}
-                                      </MenuItem>
-                                  ))
-                                : null}
-                        </Select>
-                    </FormControl>
-                </Item>
-            </Grid>
-            <Grid item xs={2}>
-                <Item>
-                    <FormControl
-                        sx={{
-                            m: 1,
-                            minWidth: 200,
-                        }}
-                        size="small"
-                    >
-                        <InputLabel id="clustering-select-label">Clustering Base</InputLabel>
-                        <Select
-                            labelId="clustering-select-label"
-                            id="clustering-select"
-                            value={clustering_base}
-                            label="Clustering Base Data"
-                            onChange={handleClusteringBase}
-                        >
-                            {cluster_sortings.length > 0
-                                ? cluster_sortings.map((name) => (
-                                      <MenuItem key={name} value={name}>
-                                          {capitalize(name)}
-                                      </MenuItem>
-                                  ))
-                                : null}
-                        </Select>
-                    </FormControl>
-                </Item>
-            </Grid>
-            <Grid item xs={2}>
-                <Item>
-                    <FormControl
-                        sx={{
-                            m: 1,
-                            minWidth: 250,
-                        }}
-                        size="small"
-                    >
-                        <InputLabel id="clustering-method-select-label">
-                            Clustering Method
-                        </InputLabel>
-                        <Select
-                            labelId="clustering-method-select-label"
-                            id="clustering-method-select"
-                            value={clustering_method}
-                            label="Clustering Method"
-                            onChange={handleClusteringMethod}
-                        >
-                            {cur_clustering_methods.length > 0
-                                ? cur_clustering_methods.map((name) => (
-                                      <MenuItem key={name} value={name}>
-                                          {capitalize(name)}
-                                      </MenuItem>
-                                  ))
-                                : null}
-                        </Select>
-                    </FormControl>
-                </Item>
-            </Grid>
-            <Grid item xs={1}>
-                <Item>
-                    <Button onClick={handleButton} variant="contained">
-                        Redraw
-                    </Button>
+                        <Grid item xs={2}>
+                            <Item>
+                                <FormControl
+                                    sx={{
+                                        m: 1,
+                                        display: 'flex',
+                                        wrap: 'nowrap',
+                                        fullWidth: true,
+                                    }}
+                                    size="small"
+                                >
+                                    <InputLabel id="stage-select-label">Stage</InputLabel>
+                                    <Select
+                                        autoWidth={true}
+                                        labelId="stage-select-label"
+                                        id="stage-select"
+                                        label="Stage"
+                                        onChange={handleStage}
+                                        value={stage}
+                                    >
+                                        {stages.length > 0
+                                            ? stages.map((name) => (
+                                                  <MenuItem key={name} value={name}>
+                                                      {capitalize(name)}
+                                                  </MenuItem>
+                                              ))
+                                            : null}
+                                    </Select>
+                                </FormControl>
+                            </Item>
+                        </Grid>
+                        <Grid item xs={3}>
+                            <Item>
+                                <FormControl
+                                    sx={{
+                                        m: 1,
+                                        display: 'flex',
+                                        wrap: 'nowrap',
+                                        fullWidth: true,
+                                    }}
+                                    size="small"
+                                >
+                                    <InputLabel id="attribution-method-select-label">
+                                        Attribution Methods
+                                    </InputLabel>
+                                    <Select
+                                        autoWidth={true}
+                                        labelId="attribution-method-select-label"
+                                        id="attribution-method-select"
+                                        value={attribution_method}
+                                        label="Attribution Method Data"
+                                        onChange={handleAttributionMethod}
+                                        displayEmpty
+                                    >
+                                        {attribution_methods.length > 0
+                                            ? attribution_methods.map((name) => (
+                                                  <MenuItem key={name} value={name}>
+                                                      {capitalize(name)}
+                                                  </MenuItem>
+                                              ))
+                                            : null}
+                                    </Select>
+                                </FormControl>
+                            </Item>
+                        </Grid>
+                        <Grid item xs={2}>
+                            <Item>
+                                <FormControl
+                                    sx={{
+                                        m: 1,
+                                        display: 'flex',
+                                        wrap: 'nowrap',
+                                        fullWidth: true,
+                                    }}
+                                    size="small"
+                                >
+                                    <InputLabel id="clustering-select-label">
+                                        Clustering Base
+                                    </InputLabel>
+                                    <Select
+                                        autoWidth={true}
+                                        labelId="clustering-select-label"
+                                        id="clustering-select"
+                                        value={clustering_base}
+                                        label="Clustering Base Data"
+                                        onChange={handleClusteringBase}
+                                    >
+                                        {cluster_sortings.length > 0
+                                            ? cluster_sortings.map((name) => (
+                                                  <MenuItem key={name} value={name}>
+                                                      {capitalize(name)}
+                                                  </MenuItem>
+                                              ))
+                                            : null}
+                                    </Select>
+                                </FormControl>
+                            </Item>
+                        </Grid>
+                        <Grid item xs={3}>
+                            <Item>
+                                <FormControl
+                                    sx={{
+                                        m: 1,
+                                        display: 'flex',
+                                        wrap: 'nowrap',
+                                        fullWidth: true,
+                                    }}
+                                    size="small"
+                                >
+                                    <InputLabel id="clustering-method-select-label">
+                                        Clustering Method
+                                    </InputLabel>
+                                    <Select
+                                        autoWidth={true}
+                                        labelId="clustering-method-select-label"
+                                        id="clustering-method-select"
+                                        value={clustering_method}
+                                        label="Clustering Method"
+                                        onChange={handleClusteringMethod}
+                                    >
+                                        {cur_clustering_methods.length > 0
+                                            ? cur_clustering_methods.map((name) => (
+                                                  <MenuItem key={name} value={name}>
+                                                      {capitalize(name)}
+                                                  </MenuItem>
+                                              ))
+                                            : null}
+                                    </Select>
+                                </FormControl>
+                            </Item>
+                        </Grid>
+                        <Grid item xs={1}>
+                            <Item>
+                                <Button onClick={handleButton} variant="contained">
+                                    <ModelTraining />
+                                </Button>
+                            </Item>
+                        </Grid>
+                        <Grid item xs={1}>
+                            <Item>
+                                <Information></Information>
+                            </Item>
+                        </Grid>
+                    </Grid>
                 </Item>
             </Grid>
         </Grid>

@@ -50,8 +50,8 @@ export function D3Interaction({ input_data, output_data }) {
             }
 
             function mousemove(d, e) {
-                const x = d.pageX + 75 < width + x_pos ? d.pageX + 15 : width + x_pos - 50;
-                const y = d.pageY + 5;
+                const x = d.pageX + 180 < width + x_pos ? d.pageX + 15 : width + x_pos - 165;
+                const y = d.pageY + 45 < height + y_pos ? d.pageY + 15 : height + y_pos - 35;
 
                 tooltip_div
                     .html('Index of the row: ' + e)
@@ -89,7 +89,7 @@ export function D3Interaction({ input_data, output_data }) {
                 .on('mousemove', mousemove)
                 .on('mouseleave', mouseleave);
         }
-    }, [sorting_idc]);
+    }, [sorting_idc]); // eslint-disable-line react-hooks/exhaustive-deps
 
     return (
         <div className="interaction">

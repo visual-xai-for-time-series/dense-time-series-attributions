@@ -1,13 +1,15 @@
 # Dense Pixel Visualization for Attribution Techniques on Time Series (DAVOTS)
 
-The application visualizes the raw time series data, the activations of the last fully connected layer, and the attributions in a dense pixel visualization using PIXI.js.
+The application visualizes raw time series data, activations of the last fully connected layer, and attributions in a dense pixel visualization using PIXI.js for whole time series datasets for trained models.
 
 ### Data and Model to explore:
 
 Dataset: Ford A (Training: 3601 / Test: 1320)  
 Model: 3 Conv1D (5, 10, 50, kernel=3, stride=2), 2 FC (100, 2)  
-Attribution: IntegratedGradients  
+Attribution: IntegratedGradients, ShapleyValueSampling  
 Activations: 100 FC
+
+Check the `preprocessing` directory and `preprocessing.py` script.
 
 ## Start the application
 
@@ -42,4 +44,19 @@ Backend:
 -   Numpy (https://numpy.org/)
 -   Scipy (https://scipy.org/)
 -   Pandas (https://pandas.pydata.org/)
+
+## License
+
+Released under MIT License. See the LICENSE file for details.
+
+## Reference
+
+```
+@conference{,
+ author = {Schlegel, Udo and Keim, Daniel A.},
+ booktitle = {Machine Learning Methods in Visualisation for Big Data 2023 @ EuroVis 2023},
+ title = {Interactive dense pixel visualizations for time series and model attribution explanations},
+ year = {2023}
+}
+```
 

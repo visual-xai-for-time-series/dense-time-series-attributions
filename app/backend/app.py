@@ -31,23 +31,17 @@ def load_file(file_name):
     if file_name in cache:
         data = cache[file_name]
     else:
-        try:
-            with open(f'data/{file_name}.json') as json_file:
-                data = json.load(json_file)
-            cache[file_name] = data
-        except FileNotFoundError:
-            return {'message': f'{file_name} file not found'}
+        data = m.parse_JSON_file(file_name)
     return data
 
 
-cache['forda_l'] = m.parse_JSON_file('forda_large')
+cache['forda'] = m.parse_JSON_file('forda')
 
 
 @app.get('/api/data/{file_name}')
 async def read_data(file_name: str, start: int = 0, end: int = -1, stage: str = '', clustering_base: str = '', clustering_method: str = '', attribution_method: str = ''):
-    data = load_file(file_name)
-    loaded_data = cache['forda_l']
-    
+    loaded_data = load_file(file_name)
+
     cluster_sorting = loaded_data.cluster_sorting
     data = loaded_data.data
     
@@ -84,22 +78,31 @@ async def read_data(file_name: str, start: int = 0, end: int = -1, stage: str = 
     # slice to start and end and calculate width
     ret_tmp = {}
     max_samples = 0
-    length = 0
+
     for k in tmp:
         if k == 'meta':
             continue
         max_samples = max(max_samples, len(tmp[k]))
-        length += len(tmp[k][0])
         ret_tmp[k] = tmp[k][start:end]
     tmp_sorting = sorting[start:end].tolist()
 
-    summary_data_std = np.std(tmp[clustering_base], axis=1).tolist()
+    summary_data_std = {}
+    for k in tmp.keys():
+        tmp_data = np.array(tmp[k])
+        
+        if len(tmp_data.shape) > 1:
+            if tmp_data.shape[-1] > 10:
+                summary_data_std[k] = np.std(tmp_data, axis=1).tolist()
+            else:
+                summary_data_std[k] = np.mean(tmp_data, axis=1).tolist()
+        else:
+            summary_data_std[k] = tmp_data.copy().tolist()
+
     ret_tmp['meta'] = {
         'cur_stage': stage,
         'cur_attribution_method': attribution_method,
         'stages': stages,
         'attribution_methods': attribution_methods,
-        'length': length,
         'max_samples': max_samples,
         'cluster_sortings': cluster_sorting_defaults,
         'cur_clustering_base': clustering_base,
