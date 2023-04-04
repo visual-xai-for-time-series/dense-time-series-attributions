@@ -26,10 +26,37 @@ import { BaseDense } from './components/BaseDense/BaseDense';
 import { D3Interaction } from './components/D3Interaction/D3Interaction';
 
 function App() {
+    const parameter_height = 60;
+
+    const client_width =
+        window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+
+    const client_height =
+        (window.innerHeight ||
+            document.documentElement.clientHeight ||
+            document.body.clientHeight) - parameter_height;
+
     const [attributions, setAttributions] = useState(null);
     const [activations, setActivations] = useState(null);
     const [rawdata, setRawData] = useState(null);
     const [labels, setLabels] = useState(null);
+
+    let start_layout = 'vertical';
+    if (client_width > 3600) {
+        start_layout = 'horizontal';
+    }
+
+    const [settings, setSettings] = useState({
+        layout: start_layout,
+        layouts: ['vertical', 'horizontal'],
+        show_raw_data: true,
+        show_raw_data_hist: false,
+        show_activations: true,
+        show_activations_hist: false,
+        show_attributions: true,
+        show_attributions_hist: false,
+        show_labels_pred: true,
+    });
 
     const [parameters, setParameters] = useState({
         cluster_sortings: {},
@@ -53,20 +80,19 @@ function App() {
 
     const [error, setError] = useState(null);
 
-    const [url_param, setUrlParam] = useState('forda?start=0&end=100');
-
     const [loading, setLoading] = useState(true);
 
     const ref = useRef();
 
-    const client_width =
-        (window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth) -
-        20;
-    const client_height =
-        (window.innerHeight ||
-            document.documentElement.clientHeight ||
-            document.body.clientHeight) - 60;
     const [vis_height, setVisHeight] = useState(client_height);
+
+    let end_start = 300;
+    if (settings.layout === 'horizontal') {
+        end_start = parseInt(client_width / 2);
+    } else {
+        end_start = parseInt((client_height - parameter_height) / 2);
+    }
+    const [url_param, setUrlParam] = useState(`forda?start=0&end=${end_start}`);
 
     const loadElements = { labels: false, attributions: false, activations: false, rawdata: false };
     const handleLoading = (key, param) => {
@@ -93,7 +119,9 @@ function App() {
         const start = new_parameters.sample_idc[0];
         const end = new_parameters.sample_idc[1];
 
-        setVisHeight(Math.max(end - start, client_height));
+        if (settings.layout === 'vertical') {
+            setVisHeight(Math.max(end - start, client_height));
+        }
 
         const stage = new_parameters.stage;
         const clustering_base = new_parameters.clustering_base;
@@ -131,6 +159,8 @@ function App() {
                 const attribution_methods = data.meta.attribution_methods;
                 const sorting_idc = data.meta.sorting_idc;
 
+                const layout = settings.layout;
+
                 setParameters({
                     cluster_sortings: cluster_sortings,
                     max_samples: max_samples,
@@ -143,80 +173,121 @@ function App() {
                     attribution_methods: attribution_methods,
                 });
 
-                const inter_margin = 5;
-                const intra_margin = 3;
+                const inter_margin = 3;
+                const intra_margin = 2;
 
-                const data_length =
-                    data.raw[0].length +
-                    data.raw_hist[0].length +
-                    data.activations[0].length +
-                    data.activations_hist[0].length +
-                    data.attributions[0].length +
-                    data.attributions_hist[0].length +
-                    data.labels_pred[0].length;
-                const length = data_length + intra_margin * 3 + inter_margin * 3;
+                const raw_length = settings.show_raw_data ? data.raw[0].length : 0;
+                const raw_hist_length = settings.show_raw_data_hist ? data.raw_hist[0].length : 0;
 
-                const raw_length = data.raw[0].length + data.raw_hist[0].length + intra_margin;
-                const width_raw = (client_width * raw_length) / length;
+                const raw_margin =
+                    settings.show_raw_data && settings.show_raw_data_his ? intra_margin : 0;
+                const raw_length_overall = raw_length + raw_hist_length + raw_margin;
 
-                const act_length =
-                    data.activations[0].length + data.activations_hist[0].length + intra_margin;
-                const width_act = (client_width * act_length) / length;
+                const act_length = settings.show_activations ? data.activations[0].length : 0;
+                const act_hist_length = settings.show_activations_hist
+                    ? data.activations_hist[0].length
+                    : 0;
 
-                const att_length =
-                    data.attributions[0].length + data.attributions_hist[0].length + intra_margin;
-                const width_att = (client_width * att_length) / length;
+                const act_margin =
+                    settings.show_activations && settings.show_activations_hist ? intra_margin : 0;
+                const act_length_overall = act_length + act_hist_length + act_margin;
 
-                const lab_length = data.labels_pred[0].length;
-                const width_lab = (client_width * lab_length) / length;
+                const att_length = settings.show_attributions ? data.attributions[0].length : 0;
+                const att_hist_length = settings.show_attributions_hist
+                    ? data.attributions_hist[0].length
+                    : 0;
+
+                const att_margin =
+                    settings.show_attributions && settings.show_attributions_hist
+                        ? intra_margin
+                        : 0;
+                const att_length_overall = att_length + att_hist_length + att_margin;
+
+                const lab_length = settings.show_labels_pred
+                    ? Math.max(10, data.labels_pred[0].length * 2)
+                    : 0;
+
+                const whole_length =
+                    raw_length_overall +
+                    inter_margin +
+                    act_length_overall +
+                    inter_margin +
+                    att_length_overall +
+                    inter_margin +
+                    lab_length;
+
+                if (layout === 'horizontal') {
+                    setVisHeight(Math.max(whole_length, vis_height));
+                }
+
+                const dimensions = layout === 'vertical' ? client_width : vis_height;
+                const samples = layout === 'vertical' ? vis_height : client_width;
+
+                const dimensions_raw = (dimensions * raw_length_overall) / whole_length;
+                const dimensions_act = (dimensions * act_length_overall) / whole_length;
+                const dimensions_att = (dimensions * att_length_overall) / whole_length;
+                const dimensions_lab = (dimensions * lab_length) / whole_length;
 
                 const pos_raw = 0;
-                const pos_act = pos_raw + width_raw + inter_margin;
-                const pos_att = pos_act + width_act + inter_margin;
-                const pos_lab = pos_att + width_att + inter_margin;
+                const pos_act = pos_raw + dimensions_raw + inter_margin;
+                const pos_att = pos_act + dimensions_act + inter_margin;
+                const pos_lab = pos_att + dimensions_att + inter_margin;
+
+                const att_data = att_length > 0 ? MinMaxNorm(data.attributions) : null;
+                const att_hist = att_hist_length > 0 ? SqrtNorm(data.attributions_hist) : null;
 
                 let attributions = {
-                    data: MinMaxNorm(data.attributions),
-                    hist: SqrtNorm(data.attributions_hist),
+                    data: att_data,
+                    hist: att_hist,
                     color_data: 'interpolateRdBu',
                     color_hist: 'interpolateOranges',
-                    width: width_att,
-                    height: vis_height,
-                    pos_x: pos_att,
+                    dimensions: dimensions_att,
+                    samples: samples,
+                    pos: pos_att,
                     intra_margin: intra_margin,
+                    layout: layout,
                 };
                 setAttributions(attributions);
 
+                const act_data = act_length > 0 ? MinMaxNorm(data.activations) : null;
+                const act_hist = act_hist_length > 0 ? SqrtNorm(data.activations_hist) : null;
+
                 let activations = {
-                    data: MinMaxNorm(data.activations),
-                    hist: SqrtNorm(data.activations_hist),
+                    data: act_data,
+                    hist: act_hist,
                     color_data: 'interpolateOranges',
                     color_hist: 'interpolateOranges',
-                    width: width_act,
-                    height: vis_height,
-                    pos_x: pos_act,
+                    dimensions: dimensions_act,
+                    samples: samples,
+                    pos: pos_act,
                     intra_margin: intra_margin,
+                    layout: layout,
                 };
                 setActivations(activations);
 
+                const raw_data = raw_length > 0 ? MinMaxNorm(data.raw) : null;
+                const raw_hist = raw_hist_length > 0 ? SqrtNorm(data.raw_hist) : null;
+
                 let rawdata = {
-                    data: MinMaxNorm(data.raw),
-                    hist: SqrtNorm(data.raw_hist),
+                    data: raw_data,
+                    hist: raw_hist,
                     color_data: 'interpolateRdBu',
                     color_hist: 'interpolateOranges',
-                    width: width_raw,
-                    height: vis_height,
-                    pos_x: pos_raw,
+                    dimensions: dimensions_raw,
+                    samples: samples,
+                    pos: pos_raw,
                     intra_margin: intra_margin,
+                    layout: layout,
                 };
                 setRawData(rawdata);
 
                 let labels = {
                     data: data.labels_pred.map(softmax),
                     color_data: 'interpolateViridis',
-                    width: width_lab,
-                    height: vis_height,
-                    pos_x: pos_lab,
+                    dimensions: dimensions_lab,
+                    samples: samples,
+                    pos: pos_lab,
+                    layout: layout,
                 };
                 setLabels(labels);
 
@@ -227,6 +298,7 @@ function App() {
                     width: rect.width,
                     height: rect.height,
                     sorting_idc: sorting_idc,
+                    end_start: end_start,
                 };
                 setInteractions(interactions);
 
@@ -279,7 +351,11 @@ function App() {
                         ></D3Interaction>
                     </Item>
                 </Grid>
-                <Parameters input_data={parameters} output_data={changeUrlParam}></Parameters>
+                <Parameters
+                    input_data={parameters}
+                    output_data={changeUrlParam}
+                    settings={settings}
+                ></Parameters>
             </Grid>
             <Box
                 sx={{

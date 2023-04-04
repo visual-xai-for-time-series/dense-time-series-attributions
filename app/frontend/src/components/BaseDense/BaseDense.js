@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 
-import { densePixel } from '../Helper/DensePixel';
+import { DensePixelSamplesVertical, DensePixelSamplesHorizontal } from '../Helper/DensePixel';
 
 import { Graphics, Container } from '@pixi/react';
 
@@ -15,14 +15,27 @@ export function BaseDense({ data, event }) {
             if (data && data.data) {
                 g.clear();
 
-                densePixel(
-                    data_normalized,
-                    g,
-                    data.pos_x,
-                    data.width,
-                    data.height,
-                    data.color_data
-                );
+                const layout = data.layout;
+
+                if (layout === 'vertical') {
+                    DensePixelSamplesVertical(
+                        data_normalized,
+                        g,
+                        data.dimensions,
+                        data.samples,
+                        data.pos,
+                        data.color_data
+                    );
+                } else {
+                    DensePixelSamplesHorizontal(
+                        data_normalized,
+                        g,
+                        data.samples,
+                        data.dimensions,
+                        data.pos,
+                        data.color_data
+                    );
+                }
 
                 event(true);
             }

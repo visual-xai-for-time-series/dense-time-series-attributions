@@ -2,6 +2,8 @@
 
 The application visualizes raw time series data, activations of the last fully connected layer, and attributions in a dense pixel visualization using PIXI.js for whole time series datasets for trained models.
 
+MLVIS 2023 freeze: [076dffd54a1197da9bb88411887b7290fcae81cf](https://github.com/visual-xai-for-time-series/dense-time-series-attributions/tree/076dffd54a1197da9bb88411887b7290fcae81cf)
+
 ### Data and Model to explore:
 
 Dataset: Ford A (Training: 3601 / Test: 1320)  

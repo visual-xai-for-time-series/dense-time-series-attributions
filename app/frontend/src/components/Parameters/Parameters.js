@@ -11,19 +11,20 @@ import Button from '@mui/material/Button';
 import ModelTraining from '@mui/icons-material/ModelTraining';
 
 import { D3Slider } from '../D3Slider/D3Slider';
-import { Information } from '../Helper/Information';
+import { Settings } from '../Helper/Settings';
 
 import { capitalize } from '../Helper/Helper';
 
-export function Parameters({ input_data, output_data }) {
+export function Parameters({ input_data, output_data, settings }) {
     const cluster_sortings = Object.keys(input_data.cluster_sortings);
     const cluster_sorting_methods = input_data.cluster_sortings;
     const stages = input_data.stages;
     const attribution_methods = input_data.attribution_methods;
 
-    const max_samples = input_data.max_samples ? input_data.max_samples : 100;
+    const end_start = input_data.end_start > 0 ? input_data.end_start : 100;
+    const max_samples = input_data.max_samples ? input_data.max_samples : end_start;
 
-    const [samples_idc, setSamplesIdc] = useState([0, 100]);
+    const [samples_idc, setSamplesIdc] = useState([0, end_start]);
 
     const [clustering_base, setClusteringBase] = useState('');
     const [clustering_method, setClusteringMethod] = useState('');
@@ -34,8 +35,8 @@ export function Parameters({ input_data, output_data }) {
     const [cur_clustering_methods, setCurClusteringMethods] = useState([]);
 
     const [slider_parameters, setSliderParameters] = useState({
-        max_samples: 100,
-        start_range: [0, 100],
+        max_samples: end_start,
+        start_range: [0, end_start],
         cur_summary_data: null,
     });
 
@@ -273,7 +274,7 @@ export function Parameters({ input_data, output_data }) {
                         </Grid>
                         <Grid item xs={1}>
                             <Item>
-                                <Information></Information>
+                                <Settings settings={settings}></Settings>
                             </Item>
                         </Grid>
                     </Grid>
