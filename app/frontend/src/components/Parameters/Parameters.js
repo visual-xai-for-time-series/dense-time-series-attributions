@@ -15,16 +15,17 @@ import { Settings } from '../Helper/Settings';
 
 import { capitalize } from '../Helper/Helper';
 
-export function Parameters({ input_data, output_data, settings }) {
+export function Parameters({ input_data, output_data, input_settings, output_settings }) {
     const cluster_sortings = Object.keys(input_data.cluster_sortings);
     const cluster_sorting_methods = input_data.cluster_sortings;
     const stages = input_data.stages;
     const attribution_methods = input_data.attribution_methods;
 
-    const end_start = input_data.end_start > 0 ? input_data.end_start : 100;
-    const max_samples = input_data.max_samples ? input_data.max_samples : end_start;
+    const start_end = input_data.start_end > 0 ? input_data.start_end : 100;
+    const max_samples = input_data.max_samples ? input_data.max_samples : start_end;
+    const start_range = [0, start_end];
 
-    const [samples_idc, setSamplesIdc] = useState([0, end_start]);
+    const [samples_idc, setSamplesIdc] = useState('');
 
     const [clustering_base, setClusteringBase] = useState('');
     const [clustering_method, setClusteringMethod] = useState('');
@@ -35,9 +36,10 @@ export function Parameters({ input_data, output_data, settings }) {
     const [cur_clustering_methods, setCurClusteringMethods] = useState([]);
 
     const [slider_parameters, setSliderParameters] = useState({
-        max_samples: end_start,
-        start_range: [0, end_start],
+        max_samples: max_samples,
+        start_range: start_range,
         cur_summary_data: null,
+        cur_range: null,
     });
 
     useEffect(() => {
@@ -56,12 +58,15 @@ export function Parameters({ input_data, output_data, settings }) {
         const summary_data = input_data.summary_data;
         const cur_summary_data = summary_data ? summary_data[cur_clustering_base] : null;
 
-        const cur_slider_parameters = {
-            max_samples: max_samples,
-            start_range: samples_idc,
-            cur_summary_data: cur_summary_data,
-        };
-        setSliderParameters(cur_slider_parameters);
+        if (cur_summary_data) {
+            const cur_slider_parameters = {
+                max_samples: max_samples,
+                start_range: start_range,
+                cur_summary_data: cur_summary_data,
+                cur_range: samples_idc,
+            };
+            setSliderParameters(cur_slider_parameters);
+        }
     }, [input_data, cluster_sorting_methods]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleSliderChange = (new_value) => {
@@ -88,8 +93,9 @@ export function Parameters({ input_data, output_data, settings }) {
         const cur_summary_data = summary_data[cur_clustering_base];
         const cur_slider_parameters = {
             max_samples: max_samples,
-            start_range: samples_idc,
+            start_range: start_range,
             cur_summary_data: cur_summary_data,
+            cur_range: samples_idc,
         };
         setSliderParameters(cur_slider_parameters);
     };
@@ -274,7 +280,10 @@ export function Parameters({ input_data, output_data, settings }) {
                         </Grid>
                         <Grid item xs={1}>
                             <Item>
-                                <Settings settings={settings}></Settings>
+                                <Settings
+                                    input_settings={input_settings}
+                                    output_settings={output_settings}
+                                ></Settings>
                             </Item>
                         </Grid>
                     </Grid>

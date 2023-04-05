@@ -5,8 +5,6 @@ import * as d3 from 'd3';
 export function D3Slider({ input_data, output_data }) {
     const wrapper_ref = useRef(null);
 
-    console.log(input_data);
-
     useEffect(() => {
         const wrapper_element = d3.select(wrapper_ref.current);
         wrapper_element.selectAll('*').remove();
@@ -15,7 +13,10 @@ export function D3Slider({ input_data, output_data }) {
         const height = wrapper_element.node().parentNode.parentNode.parentNode.clientHeight;
 
         const max_samples = input_data.max_samples;
-        const start_range = input_data.start_range;
+        let cur_range = input_data.start_range;
+        if (input_data.cur_range) {
+            cur_range = input_data.cur_range;
+        }
 
         const margin = {
             left: 10,
@@ -45,9 +46,9 @@ export function D3Slider({ input_data, output_data }) {
             .attr('height', height - margin.top - margin.bottom)
             .attr('viewbox', [0, 0, width, height]);
 
-        svg.append('g').call(brush).call(brush.move, start_range.map(x));
-
         if (input_data.cur_summary_data) {
+            svg.append('g').call(brush).call(brush.move, cur_range.map(x));
+
             const summary_data = input_data.cur_summary_data;
             const extent = d3.extent(summary_data);
 

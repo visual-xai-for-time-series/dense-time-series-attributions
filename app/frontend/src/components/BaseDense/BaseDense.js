@@ -6,13 +6,13 @@ import { Graphics, Container } from '@pixi/react';
 
 export function BaseDense({ data, event }) {
     let data_normalized = null;
-    if (data && data.data) {
+    if (data) {
         data_normalized = data.data;
     }
 
     const draw = useCallback(
         (g) => {
-            if (data && data.data) {
+            if (data) {
                 g.clear();
 
                 const layout = data.layout;

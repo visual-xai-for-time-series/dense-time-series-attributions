@@ -66,6 +66,7 @@ function App() {
         cur_stage: '',
         cur_attribution_method: '',
         summary_data: null,
+        end_start: null,
         stages: [],
         attribution_methods: [],
     });
@@ -86,13 +87,13 @@ function App() {
 
     const [vis_height, setVisHeight] = useState(client_height);
 
-    let end_start = 300;
+    let start_end = 300;
     if (settings.layout === 'horizontal') {
-        end_start = parseInt(client_width / 2);
+        start_end = parseInt(client_width / 2);
     } else {
-        end_start = parseInt((client_height - parameter_height) / 2);
+        start_end = parseInt((client_height - parameter_height) / 2);
     }
-    const [url_param, setUrlParam] = useState(`forda?start=0&end=${end_start}`);
+    const [url_param, setUrlParam] = useState(`forda?start=0&end=${start_end}`);
 
     const loadElements = { labels: false, attributions: false, activations: false, rawdata: false };
     const handleLoading = (key, param) => {
@@ -113,6 +114,13 @@ function App() {
     };
     const rawdataElement = (param) => {
         handleLoading('rawdata', param);
+    };
+
+    const changeSettings = (new_settings) => {
+        setSettings({
+            ...settings,
+            ...new_settings,
+        });
     };
 
     const changeUrlParam = (new_parameters) => {
@@ -169,6 +177,7 @@ function App() {
                     cur_stage: cur_stage,
                     cur_attribution_method: cur_attribution_method,
                     summary_data: summary_data,
+                    start_end: start_end,
                     stages: stages,
                     attribution_methods: attribution_methods,
                 });
@@ -204,7 +213,7 @@ function App() {
                 const att_length_overall = att_length + att_hist_length + att_margin;
 
                 const lab_length = settings.show_labels_pred
-                    ? Math.max(10, data.labels_pred[0].length * 2)
+                    ? Math.max(5, data.labels_pred[0].length * 2)
                     : 0;
 
                 const whole_length =
@@ -281,8 +290,10 @@ function App() {
                 };
                 setRawData(rawdata);
 
+                const labels_pred = lab_length > 0 ? data.labels_pred.map(softmax) : null;
+
                 let labels = {
-                    data: data.labels_pred.map(softmax),
+                    data: labels_pred,
                     color_data: 'interpolateViridis',
                     dimensions: dimensions_lab,
                     samples: samples,
@@ -298,7 +309,7 @@ function App() {
                     width: rect.width,
                     height: rect.height,
                     sorting_idc: sorting_idc,
-                    end_start: end_start,
+                    start_end: start_end,
                 };
                 setInteractions(interactions);
 
@@ -307,7 +318,7 @@ function App() {
             .catch((reason) => {
                 setError(reason);
             });
-    }, [url_param]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [url_param, settings]); // eslint-disable-line react-hooks/exhaustive-deps
 
     if (error) {
         return <div>Error: {error.message}</div>;
@@ -348,13 +359,15 @@ function App() {
                         <D3Interaction
                             input_data={interactions}
                             output_data={labelElement}
+                            input_settings={settings}
                         ></D3Interaction>
                     </Item>
                 </Grid>
                 <Parameters
                     input_data={parameters}
                     output_data={changeUrlParam}
-                    settings={settings}
+                    input_settings={settings}
+                    output_settings={changeSettings}
                 ></Parameters>
             </Grid>
             <Box

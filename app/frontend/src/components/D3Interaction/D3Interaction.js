@@ -6,11 +6,11 @@ import { round } from './../Helper/Helper';
 
 import './D3Interaction.css';
 
-export function D3Interaction({ input_data, output_data }) {
-    console.log(input_data);
-
+export function D3Interaction({ input_data, output_data, input_settings }) {
     const x_pos = input_data.x_pos;
     const y_pos = input_data.y_pos;
+
+    const layout = input_settings.layout;
 
     const width = input_data.width;
     const height = input_data.height;
@@ -30,7 +30,11 @@ export function D3Interaction({ input_data, output_data }) {
     useEffect(() => {
         if (sorting_idc) {
             const row_len = sorting_idc.length;
-            const row_height = Math.max(1, round(height / row_len));
+
+            const samples = layout === 'vertical' ? Math.max(1, round(height / row_len)) : height;
+            const dimensions = layout === 'vertical' ? width : Math.max(1, round(width / row_len));
+
+            const sample_stroke = layout === 'vertical' ? samples / 100 : dimensions / 100;
 
             d3.select(div_ref.current).selectAll('*').remove();
             const tooltip_div = d3
@@ -65,7 +69,6 @@ export function D3Interaction({ input_data, output_data }) {
             }
 
             const svg = d3.select(svg_ref.current);
-            const stroke_width = row_height / 100;
 
             svg.selectAll('*').remove();
             svg.selectAll('.sample-row')
@@ -74,16 +77,20 @@ export function D3Interaction({ input_data, output_data }) {
                 .append('g')
                 .attr('class', 'sample-row')
                 .attr('transform', (_, i) => {
-                    return 'translate(0,' + i * row_height + ')';
+                    if (layout === 'vertical') {
+                        return 'translate(0, ' + i * samples + ')';
+                    } else {
+                        return 'translate(' + i * dimensions + ', 0)';
+                    }
                 })
                 .append('rect')
                 .attr('x', 0)
                 .attr('y', 0)
-                .attr('width', width)
-                .attr('height', row_height)
+                .attr('width', dimensions)
+                .attr('height', samples)
                 .attr('fill-opacity', 0)
                 .attr('stroke', 'blue')
-                .attr('stroke-width', stroke_width)
+                .attr('stroke-width', sample_stroke)
                 .style('stroke-opacity', 0)
                 .on('mouseover', mouseover)
                 .on('mousemove', mousemove)
