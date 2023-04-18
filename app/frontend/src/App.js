@@ -154,7 +154,7 @@ function App() {
 
         d3.json(url)
             .then((data) => {
-                console.log(data);
+                console.log(data.meta);
 
                 const cluster_sortings = data.meta.cluster_sortings;
                 const max_samples = data.meta.max_samples;
