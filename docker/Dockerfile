@@ -36,7 +36,8 @@ STOPSIGNAL SIGQUIT
 
 COPY ./docker/nginx.conf /etc/nginx/nginx.conf
 
-COPY --chmod=755 ./docker/start.sh ./start.sh
-# RUN chmod a+x ./start.sh
+# COPY --chmod=755 ./docker/start.sh ./start.sh
+COPY ./docker/start.sh ./start.sh
+RUN chmod a+x ./start.sh
 
 CMD ["./start.sh"]
