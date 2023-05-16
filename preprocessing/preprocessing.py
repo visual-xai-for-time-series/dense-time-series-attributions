@@ -34,7 +34,7 @@ y_test_ohe = encoder.transform(np.expand_dims(y_test, axis=-1))
 y_train_norm = y_train_ohe.argmax(axis=-1)
 y_test_norm = y_test_ohe.argmax(axis=-1)
 
-class FordADataset(Dataset):
+class TSCDataset(Dataset):
 
     def __init__(self, X, y):
         self.X = X
@@ -49,8 +49,8 @@ class FordADataset(Dataset):
         
         return inputs, label
 
-dataset_train = FordADataset(X_train, y_train_ohe)
-dataset_test = FordADataset(X_test, y_test_ohe)
+dataset_train = TSCDataset(X_train, y_train_ohe)
+dataset_test = TSCDataset(X_test, y_test_ohe)
 
 dataloader_train = DataLoader(dataset_train, batch_size=120, shuffle=True)
 dataloader_train_not_shuffled = DataLoader(dataset_train, batch_size=120, shuffle=False)

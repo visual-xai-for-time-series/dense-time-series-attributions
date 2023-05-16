@@ -4,3 +4,8 @@ uvicorn == 0.20.0
 
 numpy == 1.24.2
 scipy == 1.10.0
+
+pillow == 9.5.0
+matplotlib == 3.7.1
+
+scikit-learn == 1.2.2

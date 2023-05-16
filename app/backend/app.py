@@ -1,13 +1,19 @@
 import json
+import base64
 
 import numpy as np
 
 import scipy as sp
 
 from fastapi import FastAPI
+from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 
+from pydantic import BaseModel
+
 import model as m
+
+import image as i
 
 
 origins = [
@@ -36,10 +42,39 @@ def load_file(file_name):
 
 
 cache['forda'] = m.parse_JSON_file('forda')
+# cache['forda_normalized'] = m.parse_JSON_file('forda_normalized')
 
 
-@app.get('/api/data/{file_name}')
-async def read_data(file_name: str, start: int = 0, end: int = -1, stage: str = '', clustering_base: str = '', clustering_method: str = '', attribution_method: str = ''):
+class Settings(BaseModel):
+    resolution_width: int = 0
+    resolution_height: int = 0
+    
+    layout: str = 'vertical'
+
+    raw: bool = True
+    raw_hist: bool = False
+    activations: bool = True
+    activations_hist: bool = False
+    attributions: bool = True
+    attributions_hist: bool = False
+    labels_pred: bool = True
+
+
+@app.post('/api/image/{file_name}')
+async def read_data(file_name: str, settings: Settings, start: int = 0, end: int = -1, stage: str = '', clustering_base: str = '', clustering_method: str = '', attribution_method: str = ''):
+    resolution_width = settings.resolution_width
+    resolution_height = settings.resolution_height
+
+    layout = settings.layout
+    
+    settings_dict = settings.dict()
+    data_to_show = []
+    for k in settings_dict.keys():
+        if settings_dict[k] == True:
+            data_to_show.append(k)
+    
+    print(settings)
+    
     loaded_data = load_file(file_name)
 
     cluster_sorting = loaded_data.cluster_sorting
@@ -98,6 +133,33 @@ async def read_data(file_name: str, start: int = 0, end: int = -1, stage: str = 
         else:
             summary_data_std[k] = tmp_data.copy().tolist()
 
+    data_generation = [
+        ['raw', 'MinMax', 'interpolateRdBu'],
+        ['raw_hist', 'Sqrt', 'interpolateReds'],
+        ['activations', 'MinMax', 'interpolateReds'],
+        ['activations_hist', 'Sqrt', 'interpolateReds'],
+        ['attributions', 'MinMax', 'interpolateRdBu'],
+        ['attributions_hist', 'Sqrt', 'interpolateReds'],
+        ['labels_pred', 'MinMax', 'viridis']
+    ]
+
+    data_for_image = []
+    for k in data_generation:
+        k, norm, cmap = k
+        if k in ret_tmp and k in data_to_show:
+            d = np.array(ret_tmp[k])
+            # d = i.discretizer(d)
+            d = i.normalize(d, norm)
+            d = i.data_to_color(d, cmap)
+            data_for_image.append(d)
+
+    image = i.data_to_image(data_for_image, resolution=[resolution_width, resolution_height], direction=layout)
+    image_base64 = base64.b64encode(image.read())
+    
+    ret_tmp = {
+       'image': image_base64,
+   }
+    
     ret_tmp['meta'] = {
         'cur_stage': stage,
         'cur_attribution_method': attribution_method,
@@ -110,7 +172,7 @@ async def read_data(file_name: str, start: int = 0, end: int = -1, stage: str = 
         'summary_data': summary_data_std,
         'sorting_idc': tmp_sorting,
     }
-
+    
     return ret_tmp
 
 
