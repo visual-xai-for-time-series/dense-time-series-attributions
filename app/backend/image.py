@@ -62,6 +62,25 @@ def discretizer(data):
     return np.apply_along_axis(disc, 1, data).reshape(*shape)
 
 
+def only_quantiles(data, axis=1):
+    def quant(data):
+        quant_range = 0.1
+        lower_bound = np.quantile(data, quant_range)
+        upper_bound = np.quantile(data, 1 - quant_range)
+        
+        fill = (max(data) - min(data)) / 2
+        
+        data_new = np.copy(data)
+        data_new[(data_new > lower_bound) & (upper_bound > data_new)] = fill
+
+        return data_new
+
+    if axis == -1:
+        return quant(data)
+    else:
+        return np.apply_along_axis(quant, 1, data)
+
+
 def data_to_color(data, colormap=''):
     cmap = mpl.colormaps['binary']
     if colormap == 'interpolateBwr':

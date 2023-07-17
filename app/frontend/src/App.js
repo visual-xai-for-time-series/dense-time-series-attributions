@@ -25,23 +25,17 @@ import Image from './components/Image/image';
 function App() {
     const parameter_height = 60;
 
-    const client_width =
-        window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth - 10;
+    const client_width = document.documentElement.clientWidth || document.body.clientWidth - 10;
 
     const client_height =
-        (window.innerHeight ||
-            document.documentElement.clientHeight ||
-            document.body.clientHeight) -
+        (document.documentElement.clientHeight || document.body.clientHeight) -
         parameter_height -
         10;
 
-    let start_layout = 'vertical';
-    if (client_width > 3600) {
-        start_layout = 'horizontal';
-    }
+    let start_layout = 'horizontal';
 
     const meta_img = {
-        width: client_width,
+        width: client_width - 10,
         height: client_height,
     };
 
@@ -147,7 +141,7 @@ function App() {
             body: JSON.stringify({
                 layout: settings.layout,
 
-                resolution_width: client_width,
+                resolution_width: client_width - 10,
                 resolution_height: client_height,
 
                 raw: settings.show_raw_data,

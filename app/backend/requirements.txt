@@ -9,3 +9,5 @@ pillow == 9.5.0
 matplotlib == 3.7.1
 
 scikit-learn == 1.2.2
+
+dtaidistance == 2.3.10

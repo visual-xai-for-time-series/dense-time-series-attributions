@@ -15,6 +15,8 @@ import model as m
 
 import image as i
 
+import functions as f
+
 
 origins = [
     'http://localhost',
@@ -58,10 +60,12 @@ class Settings(BaseModel):
     attributions: bool = True
     attributions_hist: bool = False
     labels_pred: bool = True
+    
+    suggestions: bool = False
 
 
 @app.post('/api/image/{file_name}')
-async def read_data(file_name: str, settings: Settings, start: int = 0, end: int = -1, stage: str = '', clustering_base: str = '', clustering_method: str = '', attribution_method: str = ''):
+async def serve_image(file_name: str, settings: Settings, start: int = 0, end: int = -1, stage: str = '', clustering_base: str = '', clustering_method: str = '', attribution_method: str = ''):
     resolution_width = settings.resolution_width
     resolution_height = settings.resolution_height
 
@@ -134,22 +138,24 @@ async def read_data(file_name: str, settings: Settings, start: int = 0, end: int
             summary_data_std[k] = tmp_data.copy().tolist()
 
     data_generation = [
-        ['raw', 'MinMax', 'interpolateRdBu'],
-        ['raw_hist', 'Sqrt', 'interpolateReds'],
-        ['activations', 'MinMax', 'interpolateReds'],
-        ['activations_hist', 'Sqrt', 'interpolateReds'],
-        ['attributions', 'MinMax', 'interpolateRdBu'],
-        ['attributions_hist', 'Sqrt', 'interpolateReds'],
-        ['labels_pred', 'MinMax', 'viridis']
+        ['raw', 'MinMax', 'interpolateRdBu', False],
+        ['raw_hist', 'Sqrt', 'interpolateReds', False],
+        ['activations', 'MinMax', 'interpolateReds', False],
+        ['activations_hist', 'Sqrt', 'interpolateReds', False],
+        ['attributions', 'MinMax', 'interpolateRdBu', True],
+        ['attributions_hist', 'Sqrt', 'interpolateReds', False],
+        ['labels_pred', 'MinMax', 'viridis', False]
     ]
 
     data_for_image = []
     for k in data_generation:
-        k, norm, cmap = k
+        k, norm, cmap, quant = k
         if k in ret_tmp and k in data_to_show:
             d = np.array(ret_tmp[k])
             # d = i.discretizer(d)
             d = i.normalize(d, norm)
+            if quant:
+                d = i.only_quantiles(d)
             d = i.data_to_color(d, cmap)
             data_for_image.append(d)
 
@@ -176,9 +182,14 @@ async def read_data(file_name: str, settings: Settings, start: int = 0, end: int
     return ret_tmp
 
 
+@app.post('/api/nearestneighbor/{file_name}/{idx}')
+async def serve_nearestneighbors(file_name: str, idx: int, settings: Settings, start: int = 0, end: int = -1, stage: str = '', clustering_base: str = '', clustering_method: str = '', attribution_method: str = ''):
+    pass
+
+
 @app.get('/')
 async def home():
-    return 'It works!'
+    return 'Nothing to see'
 
 
 if __name__ == '__main__':
