@@ -6,7 +6,7 @@ import numpy as np
 import scipy as sp
 
 from fastapi import FastAPI
-from fastapi.responses import Response
+from fastapi.responses import Response, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from pydantic import BaseModel
@@ -62,9 +62,20 @@ class Settings(BaseModel):
     labels_pred: bool = True
     
     suggestions: bool = False
+    
+    raw_time_series_colormap: str = 'interpolateRdBu'
+    raw_time_series_hist_colormap: str = 'interpolateReds'
+
+    activations_colormap: str = 'interpolateReds'
+    activations_hist_colormap: str = 'interpolateReds'
+
+    attributions_colormap: str = 'interpolateRdBu'
+    attributions_hist_colormap: str = 'interpolateReds'
+
+    predictions_colormap: str = 'viridis'
 
 
-@app.post('/api/image/{file_name}')
+@app.post('/api/getPixelImage/{file_name}')
 async def serve_image(file_name: str, settings: Settings, start: int = 0, end: int = -1, stage: str = '', clustering_base: str = '', clustering_method: str = '', attribution_method: str = ''):
     resolution_width = settings.resolution_width
     resolution_height = settings.resolution_height
@@ -138,14 +149,16 @@ async def serve_image(file_name: str, settings: Settings, start: int = 0, end: i
             summary_data_std[k] = tmp_data.copy().tolist()
 
     data_generation = [
-        ['raw', 'MinMax', 'interpolateRdBu', False],
-        ['raw_hist', 'Sqrt', 'interpolateReds', False],
-        ['activations', 'MinMax', 'interpolateReds', False],
-        ['activations_hist', 'Sqrt', 'interpolateReds', False],
-        ['attributions', 'MinMax', 'interpolateRdBu', True],
-        ['attributions_hist', 'Sqrt', 'interpolateReds', False],
-        ['labels_pred', 'MinMax', 'viridis', False]
+        ['raw', 'MinMax', settings.raw_time_series_colormap, False],
+        ['raw_hist', 'Sqrt', settings.raw_time_series_hist_colormap, False],
+        ['activations', 'MinMax', settings.activations_colormap, False],
+        ['activations_hist', 'Sqrt', settings.activations_hist_colormap, False],
+        ['attributions', 'MinMax', settings.attributions_colormap, True],
+        ['attributions_hist', 'Sqrt', settings.attributions_hist_colormap, False],
+        ['labels_pred', 'MinMax', settings.predictions_colormap, False]
     ]
+
+    proportion_for_image = []
 
     data_for_image = []
     for k in data_generation:
@@ -157,28 +170,35 @@ async def serve_image(file_name: str, settings: Settings, start: int = 0, end: i
             if quant:
                 d = i.only_quantiles(d)
             d = i.data_to_color(d, cmap)
+            proportion_for_image.append(d.shape[1])
             data_for_image.append(d)
+
+    proportion_sum = sum(proportion_for_image)
+    if layout == 'horizontal':
+        proportion_for_image = [x/proportion_sum * resolution_height for x in proportion_for_image]
+    else:
+        proportion_for_image = [x/proportion_sum * resolution_width for x in proportion_for_image]
 
     image = i.data_to_image(data_for_image, resolution=[resolution_width, resolution_height], direction=layout)
     image_base64 = base64.b64encode(image.read())
     
     ret_tmp = {
        'image': image_base64,
+       'meta': {
+            'cur_stage': stage,
+            'cur_attribution_method': attribution_method,
+            'stages': stages,
+            'attribution_methods': attribution_methods,
+            'max_samples': max_samples,
+            'cluster_sortings': cluster_sorting_defaults,
+            'cur_clustering_base': clustering_base,
+            'cur_clustering_method': clustering_method,
+            'summary_data': summary_data_std,
+            'sorting_idc': tmp_sorting,
+            'data_splitters': proportion_for_image,
+        }
    }
-    
-    ret_tmp['meta'] = {
-        'cur_stage': stage,
-        'cur_attribution_method': attribution_method,
-        'stages': stages,
-        'attribution_methods': attribution_methods,
-        'max_samples': max_samples,
-        'cluster_sortings': cluster_sorting_defaults,
-        'cur_clustering_base': clustering_base,
-        'cur_clustering_method': clustering_method,
-        'summary_data': summary_data_std,
-        'sorting_idc': tmp_sorting,
-    }
-    
+
     return ret_tmp
 
 
@@ -187,9 +207,50 @@ async def serve_nearestneighbors(file_name: str, idx: int, settings: Settings, s
     pass
 
 
+@app.get('/api/getAvailableColors')
+async def get_available_colors():
+    return JSONResponse(content=i.get_available_colormaps())
+
+
+@app.post('/api/getTimeSeriesForIdc/{file_name}')
+async def get_time_series_for_idc(file_name: str, body: dict, stage: str = ''):
+
+    if 'idc' not in body:
+        return 200
+
+    if len(body['idc']) < 1:
+        return 200
+
+    selected_idc = np.array(body['idc']).astype(int)
+
+    loaded_data = load_file(file_name)
+
+    cluster_sorting = loaded_data.cluster_sorting
+    data = loaded_data.data
+
+    if stage == '':
+        stage, _ = data.get_default()
+
+    collected_data = m.parse_model_to_dict(data.get(stage))
+    selected_data = collected_data['raw'][selected_idc]
+
+    start = body['start'] * selected_data.shape[1]
+    end = body['end'] * selected_data.shape[1]
+
+    image = i.idc_to_image(selected_data, start, end)
+
+    image_base64 = base64.b64encode(image.read())
+    
+    ret_tmp = {
+       'image': image_base64,
+   }
+    
+    return ret_tmp
+
+
 @app.get('/')
 async def home():
-    return 'Nothing to see'
+    return 'Server is running!'
 
 
 if __name__ == '__main__':

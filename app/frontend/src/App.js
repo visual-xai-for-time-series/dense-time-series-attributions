@@ -33,6 +33,9 @@ function App() {
         10;
 
     let start_layout = 'horizontal';
+    let start_dataset = 'forda';
+
+    let reloader = false;
 
     const meta_img = {
         width: client_width - 10,
@@ -42,6 +45,7 @@ function App() {
     const [settings, setSettings] = useState({
         layout: start_layout,
         layouts: ['vertical', 'horizontal'],
+
         show_raw_data: true,
         show_raw_data_hist: false,
         show_activations: true,
@@ -49,6 +53,15 @@ function App() {
         show_attributions: true,
         show_attributions_hist: false,
         show_labels_pred: true,
+
+        available_colormaps: [],
+        raw_time_series_colormap: 'interpolateRdBu',
+        raw_time_series_hist_colormap: 'interpolateReds',
+        activations_colormap: 'interpolateReds',
+        activations_hist_colormap: 'interpolateReds',
+        attributions_colormap: 'interpolateRdBu',
+        attributions_hist_colormap: 'interpolateReds',
+        predictions_colormap: 'viridis',
     });
 
     const [parameters, setParameters] = useState({
@@ -87,7 +100,7 @@ function App() {
         start_end = parseInt((client_height - parameter_height) / 2);
     }
 
-    const [url_param, setUrlParam] = useState(`forda?start=0&end=${start_end}`);
+    const [url_param, setUrlParam] = useState(`${start_dataset}?start=0&end=${start_end}`);
 
     const loadElements = { labels: false, attributions: false, activations: false, rawdata: false };
     const handleLoading = (key, param) => {
@@ -117,12 +130,14 @@ function App() {
         const clustering_method = new_parameters.clustering_method;
         const attribution_method = new_parameters.attribution_method;
 
-        console.log(settings.layout);
+        reloader = !reloader;
 
         setUrlParam(
-            `forda?start=${start}&end=${end}&stage=${stage}&clustering_base=${clustering_base}&clustering_method=${clustering_method}&attribution_method=${attribution_method}`
+            `${start_dataset}?start=${start}&end=${end}&stage=${stage}&clustering_base=${clustering_base}&clustering_method=${clustering_method}&attribution_method=${attribution_method}&reloader=${reloader}`
         );
     };
+
+    const base_url = process.env.REACT_APP_API_URL ? process.env.REACT_APP_API_URL : '';
 
     useEffect(() => {
         setLoading(true);
@@ -132,8 +147,7 @@ function App() {
             behavior: 'smooth',
         });
 
-        const base_url = process.env.REACT_APP_API_URL ? process.env.REACT_APP_API_URL : '';
-        const url = base_url + '/api/image/' + url_param;
+        const url = base_url + '/api/getPixelImage/' + url_param;
         console.log(url);
 
         d3.json(url, {
@@ -146,11 +160,25 @@ function App() {
 
                 raw: settings.show_raw_data,
                 raw_hist: settings.show_raw_data_hist,
+
                 activations: settings.show_activations,
                 activations_hist: settings.show_activations_hist,
+
                 attributions: settings.show_attributions,
                 attributions_hist: settings.show_attributions_hist,
+
                 labels_pred: settings.show_labels_pred,
+
+                raw_time_series_colormap: settings.raw_time_series_colormap,
+                raw_time_series_hist_colormap: settings.raw_time_series_hist_colormap,
+
+                activations_colormap: settings.activations_colormap,
+                activations_hist_colormap: settings.activations_hist_colormap,
+
+                attributions_colormap: settings.attributions_colormap,
+                attributions_hist_colormap: settings.attributions_hist_colormap,
+
+                predictions_colormap: settings.predictions_colormap,
             }),
             headers: {
                 'Content-type': 'application/json; charset=UTF-8',
@@ -173,6 +201,7 @@ function App() {
                 const stages = data.meta.stages;
                 const attribution_methods = data.meta.attribution_methods;
                 const sorting_idc = data.meta.sorting_idc;
+                const data_splitters = data.meta.data_splitters;
 
                 setParameters({
                     cluster_sortings: cluster_sortings,
@@ -196,6 +225,7 @@ function App() {
                     height: rect.height,
                     sorting_idc: sorting_idc,
                     start_end: start_end,
+                    data_splitters: data_splitters,
                 };
                 setInteractions(interactions);
 

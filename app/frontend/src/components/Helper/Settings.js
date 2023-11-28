@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
+import * as d3 from 'd3';
+
 import Drawer from '@mui/material/Drawer';
 
 import Box from '@mui/material/Box';
@@ -20,6 +22,8 @@ import Button from '@mui/material/Button';
 
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import GitHubIcon from '@mui/icons-material/GitHub';
+
+import { Selector } from './Selector/Selector';
 
 export function Settings({ input_settings, output_settings }) {
     const default_layout = input_settings.layout;
@@ -48,6 +52,28 @@ export function Settings({ input_settings, output_settings }) {
             [event.target.name]: event.target.value,
         });
     };
+
+    const handleSelect = (event) => {
+        console.log(event);
+        setSettings({
+            ...local_settings,
+            [event.target.name]: event.target.value,
+        });
+    };
+
+    const base_url = process.env.REACT_APP_API_URL ? process.env.REACT_APP_API_URL : '';
+
+    useEffect(() => {
+        d3.json(base_url + '/api/getAvailableColors', {
+            method: 'GET',
+        }).then((data) => {
+            // local_settings.available_colormaps
+            setSettings({
+                ...local_settings,
+                available_colormaps: data,
+            });
+        });
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         output_settings(local_settings);
@@ -165,6 +191,32 @@ export function Settings({ input_settings, output_settings }) {
                             <Grid item xs={1}></Grid>
                             <Grid item xs={10}>
                                 <FormGroup row>
+                                    <Selector
+                                        input={{
+                                            id: 'raw-time-series',
+                                            name: 'Raw Time Series Colormap',
+                                            available_options: local_settings.available_colormaps,
+                                            value: local_settings.raw_time_series_colormap,
+                                        }}
+                                        output={handleSelect}
+                                    ></Selector>
+
+                                    <Selector
+                                        input={{
+                                            id: 'raw-time-series-hist',
+                                            name: 'Raw Time Series Hist Colormap',
+                                            available_options: local_settings.available_colormaps,
+                                            value: local_settings.raw_time_series_hist_colormap,
+                                        }}
+                                        output={handleSelect}
+                                    ></Selector>
+                                </FormGroup>
+                            </Grid>
+                            <Grid item xs={1}></Grid>
+
+                            <Grid item xs={1}></Grid>
+                            <Grid item xs={10}>
+                                <FormGroup row>
                                     <FormControlLabel
                                         control={
                                             <Checkbox
@@ -192,6 +244,32 @@ export function Settings({ input_settings, output_settings }) {
                             <Grid item xs={1}></Grid>
                             <Grid item xs={10}>
                                 <FormGroup row>
+                                    <Selector
+                                        input={{
+                                            id: 'activations-series',
+                                            name: 'Activations Colormap',
+                                            available_options: local_settings.available_colormaps,
+                                            value: local_settings.activations_colormap,
+                                        }}
+                                        output={handleSelect}
+                                    ></Selector>
+
+                                    <Selector
+                                        input={{
+                                            id: 'activations-hist',
+                                            name: 'Activations Hist Colormap',
+                                            available_options: local_settings.available_colormaps,
+                                            value: local_settings.activations_hist_colormap,
+                                        }}
+                                        output={handleSelect}
+                                    ></Selector>
+                                </FormGroup>
+                            </Grid>
+                            <Grid item xs={1}></Grid>
+
+                            <Grid item xs={1}></Grid>
+                            <Grid item xs={10}>
+                                <FormGroup row>
                                     <FormControlLabel
                                         control={
                                             <Checkbox
@@ -212,6 +290,32 @@ export function Settings({ input_settings, output_settings }) {
                                         }
                                         label="Model Attributions Histogram"
                                     />
+                                </FormGroup>
+                            </Grid>
+                            <Grid item xs={1}></Grid>
+
+                            <Grid item xs={1}></Grid>
+                            <Grid item xs={10}>
+                                <FormGroup row>
+                                    <Selector
+                                        input={{
+                                            id: 'attributions-series',
+                                            name: 'Attributions Colormap',
+                                            available_options: local_settings.available_colormaps,
+                                            value: local_settings.attributions_colormap,
+                                        }}
+                                        output={handleSelect}
+                                    ></Selector>
+
+                                    <Selector
+                                        input={{
+                                            id: 'attributions-hist',
+                                            name: 'Attributions Hist Colormap',
+                                            available_options: local_settings.available_colormaps,
+                                            value: local_settings.attributions_hist_colormap,
+                                        }}
+                                        output={handleSelect}
+                                    ></Selector>
                                 </FormGroup>
                             </Grid>
                             <Grid item xs={1}></Grid>

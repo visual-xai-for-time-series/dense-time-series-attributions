@@ -1,12 +1,18 @@
 import * as d3 from 'd3';
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 
 import { round } from './../Helper/Helper';
+
+import { D3LinePlot } from './D3LinePlot/D3LinePlot';
 
 import './D3Interaction.css';
 
 export function D3Interaction({ input_data, output_data, input_settings }) {
+    const [brushedList, setBrushedList] = useState([]);
+
+    let key = 0;
+
     const x_pos = input_data.x_pos;
     const y_pos = input_data.y_pos;
 
@@ -17,6 +23,8 @@ export function D3Interaction({ input_data, output_data, input_settings }) {
 
     const sorting_idc = input_data.sorting_idc;
 
+    const data_splitters = input_data.data_splitters;
+
     const svg_style = {
         top: y_pos,
         left: x_pos,
@@ -26,6 +34,7 @@ export function D3Interaction({ input_data, output_data, input_settings }) {
 
     const div_ref = useRef();
     const svg_ref = useRef();
+    const brush_ref = useRef();
 
     useEffect(() => {
         if (sorting_idc) {
@@ -36,9 +45,12 @@ export function D3Interaction({ input_data, output_data, input_settings }) {
 
             const sample_stroke = layout === 'vertical' ? samples / 100 : dimensions / 100;
 
-            d3.select(div_ref.current).selectAll('*').remove();
-            const tooltip_div = d3
-                .select(div_ref.current)
+            const div = d3.select(div_ref.current);
+            const svg = d3.select(svg_ref.current);
+            const rows = svg.append('g').attr('class', 'rows');
+
+            div.selectAll('*').remove();
+            const tooltip_div = div
                 .append('div')
                 .style('opacity', 0)
                 .attr('class', 'tooltip')
@@ -48,60 +60,143 @@ export function D3Interaction({ input_data, output_data, input_settings }) {
                 .style('border-radius', '5px')
                 .style('padding', '5px');
 
-            function mouseover(_) {
-                tooltip_div.style('opacity', 1).style('display', 'block');
-                d3.select(this).style('stroke-opacity', 1);
-            }
-
-            function mousemove(d, e) {
-                const x = d.pageX + 180 < width + x_pos ? d.pageX + 15 : width + x_pos - 165;
-                const y = d.pageY + 45 < height + y_pos ? d.pageY + 15 : height + y_pos - 35;
-
-                tooltip_div
-                    .html('Index of the row: ' + e)
-                    .style('left', x + 'px')
-                    .style('top', y + 'px');
-            }
-
-            function mouseleave(_) {
-                tooltip_div.style('opacity', 0).style('display', 'none');
-                d3.select(this).style('stroke-opacity', 0);
-            }
-
-            const svg = d3.select(svg_ref.current);
-
-            svg.selectAll('*').remove();
-            svg.selectAll('.sample-row')
+            rows.selectAll('*').remove();
+            rows.selectAll('.sample-row')
                 .data(sorting_idc)
                 .enter()
-                .append('g')
+                // .append('g')
+                // .attr('class', 'sample-row')
+                // .attr('transform', (_, i) => {
+                //     if (layout === 'vertical') {
+                //         return 'translate(0, ' + i * samples + ')';
+                //     } else {
+                //         return 'translate(' + i * dimensions + ', 0)';
+                //     }
+                // })
+                .append('rect')
                 .attr('class', 'sample-row')
-                .attr('transform', (_, i) => {
+                .attr('data-idx', (d) => {
+                    return d;
+                })
+                // .attr('x', 0)
+                .attr('x', (_, i) => {
                     if (layout === 'vertical') {
-                        return 'translate(0, ' + i * samples + ')';
+                        return i * samples;
                     } else {
-                        return 'translate(' + i * dimensions + ', 0)';
+                        return i * dimensions;
                     }
                 })
-                .append('rect')
-                .attr('x', 0)
                 .attr('y', 0)
                 .attr('width', dimensions)
                 .attr('height', samples)
                 .attr('fill-opacity', 0)
                 .attr('stroke', 'blue')
                 .attr('stroke-width', sample_stroke)
-                .style('stroke-opacity', 0)
-                .on('mouseover', mouseover)
-                .on('mousemove', mousemove)
-                .on('mouseleave', mouseleave);
+                .style('stroke-opacity', 0);
+
+            console.log(data_splitters);
+
+            function brushed({ target, type, selection }) {
+                if (type === 'start') {
+                    svg.selectAll('.tmp_brushers').remove();
+                    return;
+                }
+
+                const selected = target.idx;
+
+                const x_1 = selection[0][0];
+                const x_2 = selection[1][0];
+
+                const y_1 = selection[0][1];
+                const y_2 = selection[1][1];
+
+                const relative_start = data_splitters.slice(0, selected).reduce((a, b) => a + b, 0);
+                const relative_pos = y_1 - relative_start;
+                const relative_pos_end = y_2 - relative_start;
+                const relative_pos_ration = relative_pos / data_splitters[selected];
+                const relative_pos_end_ration = relative_pos_end / data_splitters[selected];
+
+                const idc = rows
+                    .selectAll('.sample-row')
+                    .filter(function () {
+                        const x = d3.select(this).attr('x');
+                        return x_1 < x && x < x_2;
+                    })
+                    .nodes()
+                    .map(function (d) {
+                        return d3.select(d).attr('data-idx');
+                    });
+
+                key += 1;
+                const lineplot_data = {
+                    idc: idc,
+                    start: relative_pos_ration,
+                    end: relative_pos_end_ration,
+                };
+                const new_lineplot = <D3LinePlot key={key} input_data={lineplot_data}></D3LinePlot>;
+                setBrushedList((v) => [...v, new_lineplot]);
+
+                let margin = 0;
+                data_splitters.forEach((element, idx) => {
+                    if (selected !== idx) {
+                        let rect_color = 'rgba(255, 165, 0, 0.3)';
+
+                        let borderColor = 'rgba(255, 255, 255, 0.8)';
+                        let borderWidth = 1;
+
+                        let rectWidth = x_2 - x_1;
+                        let rectHeight =
+                            ((y_2 - y_1) * data_splitters[idx]) / data_splitters[selected];
+                        let rectX = x_1;
+                        let rectY = margin + relative_pos_ration * element;
+
+                        svg.append('rect')
+                            .attr('class', 'tmp_brushers')
+                            .attr('x', rectX)
+                            .attr('y', rectY)
+                            .attr('width', rectWidth)
+                            .attr('height', rectHeight)
+                            .attr('fill', rect_color)
+                            .attr('stroke', borderColor)
+                            .attr('stroke-width', borderWidth);
+                    }
+                    margin += element;
+                });
+            }
+
+            svg.selectAll('.brushers').remove();
+            let margin = 0;
+            data_splitters.forEach((element, idx) => {
+                console.log(idx);
+                console.log(element);
+
+                let brush = d3
+                    .brush()
+                    .extent([
+                        [0, margin],
+                        [width, margin + element],
+                    ])
+                    .on('start end', brushed);
+                brush.idx = idx;
+
+                svg.append('g')
+                    .attr('class', 'brushers')
+                    .attr('id', 'brush_' + idx)
+                    .call(brush);
+                console.log(d3.select(brush));
+
+                margin += element;
+            });
         }
     }, [sorting_idc]); // eslint-disable-line react-hooks/exhaustive-deps
 
     return (
         <div className="interaction">
-            <svg style={svg_style} ref={svg_ref}></svg>
+            <svg style={svg_style} ref={svg_ref}>
+                <g ref={brush_ref} />
+            </svg>
             <div ref={div_ref}></div>
+            {brushedList}
         </div>
     );
 }
