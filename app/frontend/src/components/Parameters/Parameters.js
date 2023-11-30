@@ -222,14 +222,14 @@ export function Parameters({ input_data, output_data, input_settings, output_set
                                     size="small"
                                 >
                                     <InputLabel id="clustering-select-label">
-                                        Clustering Base
+                                        Ordering Base
                                     </InputLabel>
                                     <Select
                                         autoWidth={true}
                                         labelId="clustering-select-label"
                                         id="clustering-select"
                                         value={clustering_base}
-                                        label="Clustering Base Data"
+                                        label="Ordering Base Data"
                                         onChange={handleClusteringBase}
                                     >
                                         {cluster_sortings.length > 0
@@ -255,14 +255,14 @@ export function Parameters({ input_data, output_data, input_settings, output_set
                                     size="small"
                                 >
                                     <InputLabel id="clustering-method-select-label">
-                                        Clustering Method
+                                        Ordering Method
                                     </InputLabel>
                                     <Select
                                         autoWidth={true}
                                         labelId="clustering-method-select-label"
                                         id="clustering-method-select"
                                         value={clustering_method}
-                                        label="Clustering Method"
+                                        label="Ordering Method"
                                         onChange={handleClusteringMethod}
                                     >
                                         {cur_clustering_methods.length > 0

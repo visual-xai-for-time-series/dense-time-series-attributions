@@ -10,8 +10,7 @@ import './D3Interaction.css';
 
 export function D3Interaction({ input_data, output_data, input_settings }) {
     const [brushedList, setBrushedList] = useState([]);
-
-    let key = 0;
+    const brushListKey = useRef(0);
 
     const x_pos = input_data.x_pos;
     const y_pos = input_data.y_pos;
@@ -35,6 +34,20 @@ export function D3Interaction({ input_data, output_data, input_settings }) {
     const div_ref = useRef();
     const svg_ref = useRef();
     const brush_ref = useRef();
+
+    const addToBrushList = (element) => {
+        setBrushedList((v) => [...v, element]);
+    };
+
+    const removeFromBrushList = (key) => {
+        d3.select(svg_ref.current)
+            .selectAll('.tmp_brushers')
+            .filter(function () {
+                return Number(d3.select(this).attr('data-key')) === Number(key);
+            })
+            .remove();
+        setBrushedList((prevState) => prevState.filter((item) => Number(item.key) !== Number(key)));
+    };
 
     useEffect(() => {
         if (sorting_idc) {
@@ -94,13 +107,13 @@ export function D3Interaction({ input_data, output_data, input_settings }) {
                 .attr('stroke-width', sample_stroke)
                 .style('stroke-opacity', 0);
 
-            console.log(data_splitters);
-
             function brushed({ target, type, selection }) {
-                if (type === 'start') {
-                    svg.selectAll('.tmp_brushers').remove();
+                if (type === 'start' || selection === null) {
+                    // svg.selectAll('.tmp_brushers').remove();
                     return;
                 }
+                brushListKey.current += 1;
+                const key = brushListKey.current;
 
                 const selected = target.idx;
 
@@ -127,18 +140,25 @@ export function D3Interaction({ input_data, output_data, input_settings }) {
                         return d3.select(d).attr('data-idx');
                     });
 
-                key += 1;
                 const lineplot_data = {
                     idc: idc,
                     start: relative_pos_ration,
                     end: relative_pos_end_ration,
+                    key: key,
                 };
-                const new_lineplot = <D3LinePlot key={key} input_data={lineplot_data}></D3LinePlot>;
-                setBrushedList((v) => [...v, new_lineplot]);
+                const new_lineplot = (
+                    <D3LinePlot
+                        key={key}
+                        input_data={lineplot_data}
+                        output_data={removeFromBrushList}
+                    ></D3LinePlot>
+                );
+                addToBrushList(new_lineplot);
 
                 let margin = 0;
                 data_splitters.forEach((element, idx) => {
-                    if (selected !== idx) {
+                    if (true) {
+                        // selected !== idx
                         let rect_color = 'rgba(255, 165, 0, 0.3)';
 
                         let borderColor = 'rgba(255, 255, 255, 0.8)';
@@ -152,6 +172,7 @@ export function D3Interaction({ input_data, output_data, input_settings }) {
 
                         svg.append('rect')
                             .attr('class', 'tmp_brushers')
+                            .attr('data-key', key)
                             .attr('x', rectX)
                             .attr('y', rectY)
                             .attr('width', rectWidth)
@@ -167,9 +188,6 @@ export function D3Interaction({ input_data, output_data, input_settings }) {
             svg.selectAll('.brushers').remove();
             let margin = 0;
             data_splitters.forEach((element, idx) => {
-                console.log(idx);
-                console.log(element);
-
                 let brush = d3
                     .brush()
                     .extent([
@@ -183,7 +201,6 @@ export function D3Interaction({ input_data, output_data, input_settings }) {
                     .attr('class', 'brushers')
                     .attr('id', 'brush_' + idx)
                     .call(brush);
-                console.log(d3.select(brush));
 
                 margin += element;
             });

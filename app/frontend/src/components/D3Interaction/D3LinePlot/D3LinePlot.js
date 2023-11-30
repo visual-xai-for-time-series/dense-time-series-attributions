@@ -10,6 +10,13 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 
+import Accordion from '@mui/material/Accordion';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import Typography from '@mui/material/Typography';
+
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+
 import Paper from '@mui/material/Paper';
 import Draggable from 'react-draggable';
 
@@ -17,13 +24,15 @@ function PaperComponent(props) {
     return <Paper {...props} />;
 }
 
-export function D3LinePlot({ input_data, output_data }) {
+export function D3LinePlot({ status, input_data, output_data }) {
     const [img_data, setImgData] = useState(null);
-    const [open, setOpen] = useState(false);
+    const [open, setOpen] = useState(status);
 
     const idc = input_data.idc;
     const start = input_data.start;
     const end = input_data.end;
+
+    const key = input_data.key;
 
     const base_url = process.env.REACT_APP_API_URL ? process.env.REACT_APP_API_URL : '';
 
@@ -55,6 +64,11 @@ export function D3LinePlot({ input_data, output_data }) {
         setOpen(false);
     };
 
+    const handleRemove = () => {
+        setOpen(false);
+        output_data(key);
+    };
+
     return (
         <div className="lineplotdialog">
             <Draggable
@@ -75,7 +89,16 @@ export function D3LinePlot({ input_data, output_data }) {
                     }}
                 >
                     <DialogTitle style={{ cursor: 'move' }} id="draggable-dialog-title">
-                        Percentile Plot
+                        <div
+                            style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                            }}
+                        >
+                            <div>Percentile Plot</div>
+                            <div>{key}</div>
+                        </div>
                     </DialogTitle>
                     <DialogContent>
                         <DialogContentText>
@@ -84,21 +107,36 @@ export function D3LinePlot({ input_data, output_data }) {
                                 alt="secret"
                                 style={{ maxWidth: '100%', maxHeight: '100%' }}
                             />
-                            <p style={{ overflowWrap: 'break-word' }}>
-                                {idc.length}: [
-                                {idc.map((item, index) => (
-                                    <span key={index}>
-                                        {index > 0 ? ', ' : ''}
-                                        {item}
-                                    </span>
-                                ))}
-                                ]
-                            </p>
+
+                            <Accordion>
+                                <AccordionSummary
+                                    expandIcon={<ExpandMoreIcon />}
+                                    aria-controls="panel1a-content"
+                                    id="panel1a-header"
+                                >
+                                    <Typography>Indices</Typography>
+                                </AccordionSummary>
+                                <AccordionDetails>
+                                    <Typography>
+                                        {idc.length}: [
+                                        {idc.map((item, index) => (
+                                            <span key={index}>
+                                                {index > 0 ? ', ' : ''}
+                                                {item}
+                                            </span>
+                                        ))}
+                                        ]
+                                    </Typography>
+                                </AccordionDetails>
+                            </Accordion>
                         </DialogContentText>
                     </DialogContent>
                     <DialogActions>
                         <Button autoFocus onClick={handleClose}>
                             Close
+                        </Button>
+                        <Button autoFocus onClick={handleRemove}>
+                            Remove
                         </Button>
                     </DialogActions>
                 </Dialog>

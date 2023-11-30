@@ -58,6 +58,7 @@ class StageData(BaseModel):
             return 'raw', self.raw
         if self.activations is not None:
             return 'activations', self.activations
+        return None
         
     def get_default_attribution(self):
         base = list(self.attributions.keys())[0]
@@ -140,6 +141,7 @@ class ClusteringData(BaseModel):
         if base_data == 'activations_hist':
             m = list(self.activations_hist.keys())[0]
             return m, self.activations_hist[m]
+        return None
         
     def get_default_clusterings(self):
         return {
@@ -169,6 +171,7 @@ class ClusteringData(BaseModel):
             return self.attributions[attribution][method]
         if base_data == 'attributions_hist':
             return self.attributions[f'{attribution}_hist'][method]
+        return None
 
 
 class ClusterSorting(BaseModel):

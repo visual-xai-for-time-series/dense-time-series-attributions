@@ -116,30 +116,29 @@ async def serve_image(file_name: str, settings: Settings, start: int = 0, end: i
     cluster_sorting_defaults = cluster_sorting.get(stage).get_default_clusterings()
     cluster_sorting_defaults['attributions_hist'] = cluster_sorting_defaults['attributions'][f'{attribution_method}_hist']
     cluster_sorting_defaults['attributions'] = cluster_sorting_defaults['attributions'][f'{attribution_method}']
+    cluster_sorting_defaults['None'] = ['None']
 
     sorting = cluster_sorting.get(stage).get_clusterings(clustering_base, clustering_method, attribution_method)
     stages = data.get_set()
     attribution_methods = data.get(stage).get_attributions()
     
-    tmp = {}
-    for k in collected_data:
-        tmp[k] = collected_data[k][sorting].tolist()
+    if sorting is None:
+        sorting = np.array(range(len(collected_data[list(collected_data.keys())[0]])))
 
     # slice to start and end and calculate width
     ret_tmp = {}
     max_samples = 0
+    tmp_sorting = sorting[start:end]
 
-    for k in tmp:
-        if k == 'meta':
-            continue
-        max_samples = max(max_samples, len(tmp[k]))
-        ret_tmp[k] = tmp[k][start:end]
-    tmp_sorting = sorting[start:end].tolist()
+    for k in collected_data:
+        max_samples = max(max_samples, len(collected_data[k]))
+        ret_tmp[k] = collected_data[k][tmp_sorting].tolist()
+    tmp_sorting = tmp_sorting.tolist()
 
     summary_data_std = {}
-    for k in tmp.keys():
-        tmp_data = np.array(tmp[k])
-        
+    for k in collected_data.keys():
+        tmp_data = collected_data[k][sorting]
+
         if len(tmp_data.shape) > 1:
             if tmp_data.shape[-1] > 10:
                 summary_data_std[k] = np.std(tmp_data, axis=1).tolist()
@@ -147,6 +146,8 @@ async def serve_image(file_name: str, settings: Settings, start: int = 0, end: i
                 summary_data_std[k] = np.mean(tmp_data, axis=1).tolist()
         else:
             summary_data_std[k] = tmp_data.copy().tolist()
+
+    summary_data_std['None'] = np.std(collected_data['raw'][sorting], axis=1).tolist()
 
     data_generation = [
         ['raw', 'MinMax', settings.raw_time_series_colormap, False],
