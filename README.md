@@ -1,8 +1,15 @@
-# Dense Pixel Visualization for Attribution Techniques on Time Series (DAVOTS)
+# Dense-Pixel Views for Attribution Techniques on Time Series (DAVOTS)
 
-The application visualizes raw time series data, activations of the last fully connected layer, and attributions in a dense pixel visualization using PIXI.js for whole time series datasets for trained models.
+![Teaser DAVOTS](images/teaser.png)
+
+DAVOTS visualizes raw time series data, activations of a selected layer, and attributions in a dense pixel visualization using image generation for whole time series datasets on trained models.
+
+Through such a visualization, patterns in the data and the explanations can be revealed.
+For instance, patterns the neural network learns for the classification of samples.
 
 MLVIS 2023 freeze: [076dffd54a1197da9bb88411887b7290fcae81cf](https://github.com/visual-xai-for-time-series/dense-time-series-attributions/tree/076dffd54a1197da9bb88411887b7290fcae81cf)
+
+EUROVIS 2024 current WIP.
 
 ### Data and Model to explore:
 
@@ -35,12 +42,12 @@ Frontend:
 
 -   React (https://reactjs.org/)
 -   React MUI (https://mui.com/)
--   PixiJS (https://pixijs.download/dev/docs/index.html)
 
 Backend:
 
 -   Python v3.10
 -   FastAPI (https://fastapi.tiangolo.com/)
+-   Pillow (https://pillow.readthedocs.io/en/stable/)
 -   Pytorch (https://pytorch.org/)
 -   Captum (https://captum.ai/)
 -   Numpy (https://numpy.org/)
@@ -56,7 +63,7 @@ Released under MIT License. See the LICENSE file for details.
 ```
 @conference{,
  author = {Schlegel, Udo and Keim, Daniel A.},
- booktitle = {Machine Learning Methods in Visualisation for Big Data 2023 @ EuroVis 2023},
+ booktitle = {Machine Learning Methods in Visualisation for Big Data (MLVIS) 2023 @ EuroVis 2023},
  title = {Interactive dense pixel visualizations for time series and model attribution explanations},
  year = {2023}
 }
