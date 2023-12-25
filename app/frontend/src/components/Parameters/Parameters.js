@@ -21,8 +21,8 @@ import { Settings } from '../Helper/Settings';
 import { capitalize } from '../Helper/Helper';
 
 export function Parameters({ input_data, output_data, input_settings, output_settings }) {
-    const cluster_sortings = Object.keys(input_data.cluster_sortings);
-    const cluster_sorting_methods = input_data.cluster_sortings;
+    const orderings = Object.keys(input_data.orderings);
+    const ordering_methods = input_data.orderings;
     const stages = input_data.stages;
     const attribution_methods = input_data.attribution_methods;
 
@@ -32,13 +32,13 @@ export function Parameters({ input_data, output_data, input_settings, output_set
 
     const [samples_idc, setSamplesIdc] = useState('');
 
-    const [clustering_base, setClusteringBase] = useState('');
-    const [clustering_method, setClusteringMethod] = useState('');
+    const [ordering_base, setOrderingBase] = useState('');
+    const [ordering_method, setOrderingMethod] = useState('');
 
     const [stage, setStage] = useState('');
     const [attribution_method, setAttributionMethod] = useState('');
 
-    const [cur_clustering_methods, setCurClusteringMethods] = useState([]);
+    const [cur_ordering_methods, setCurOrderingMethods] = useState([]);
 
     const [slider_parameters, setSliderParameters] = useState({
         max_samples: max_samples,
@@ -48,20 +48,20 @@ export function Parameters({ input_data, output_data, input_settings, output_set
     });
 
     useEffect(() => {
-        const cur_clustering_base = input_data.cur_clustering_base;
-        const cur_clustering_method = input_data.cur_clustering_method;
+        const cur_ordering_base = input_data.cur_ordering_base;
+        const cur_ordering_method = input_data.cur_ordering_method;
         const cur_stage = input_data.cur_stage;
         const cur_attribution_method = input_data.cur_attribution_method;
-        const cur_clustering_methods = cluster_sorting_methods[cur_clustering_base] || [];
+        const cur_ordering_methods = ordering_methods[cur_ordering_base] || [];
 
-        setClusteringBase(cur_clustering_base);
-        setCurClusteringMethods(cur_clustering_methods);
-        setClusteringMethod(cur_clustering_method);
+        setOrderingBase(cur_ordering_base);
+        setCurOrderingMethods(cur_ordering_methods);
+        setOrderingMethod(cur_ordering_method);
         setStage(cur_stage);
         setAttributionMethod(cur_attribution_method);
 
         const summary_data = input_data.summary_data;
-        const cur_summary_data = summary_data ? summary_data[cur_clustering_base] : null;
+        const cur_summary_data = summary_data ? summary_data[cur_ordering_base] : null;
 
         if (cur_summary_data) {
             const cur_slider_parameters = {
@@ -72,7 +72,7 @@ export function Parameters({ input_data, output_data, input_settings, output_set
             };
             setSliderParameters(cur_slider_parameters);
         }
-    }, [input_data, cluster_sorting_methods]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [input_data, ordering_methods]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleSliderChange = (new_value) => {
         setSamplesIdc(new_value);
@@ -87,15 +87,15 @@ export function Parameters({ input_data, output_data, input_settings, output_set
     };
 
     const handleClusteringBase = (event) => {
-        const cur_clustering_base = event.target.value;
-        console.log(cur_clustering_base);
+        const cur_ordering_base = event.target.value;
+        console.log(cur_ordering_base);
 
-        setClusteringBase(cur_clustering_base);
-        setCurClusteringMethods(cluster_sorting_methods[cur_clustering_base]);
-        setClusteringMethod(cluster_sorting_methods[cur_clustering_base][0]);
+        setOrderingBase(cur_ordering_base);
+        setCurOrderingMethods(ordering_methods[cur_ordering_base]);
+        setOrderingMethod(ordering_methods[cur_ordering_base][0]);
 
         const summary_data = input_data.summary_data;
-        const cur_summary_data = summary_data[cur_clustering_base];
+        const cur_summary_data = summary_data[cur_ordering_base];
         const cur_slider_parameters = {
             max_samples: max_samples,
             start_range: start_range,
@@ -106,15 +106,15 @@ export function Parameters({ input_data, output_data, input_settings, output_set
     };
 
     const handleClusteringMethod = (event) => {
-        setClusteringMethod(event.target.value);
+        setOrderingMethod(event.target.value);
     };
 
     const handleButton = (_) => {
         const new_parameters = {
             stage: stage,
             sample_idc: samples_idc,
-            clustering_base: clustering_base,
-            clustering_method: clustering_method,
+            ordering_base: ordering_base,
+            ordering_method: ordering_method,
             attribution_method: attribution_method,
         };
         output_data(new_parameters);
@@ -228,12 +228,12 @@ export function Parameters({ input_data, output_data, input_settings, output_set
                                         autoWidth={true}
                                         labelId="clustering-select-label"
                                         id="clustering-select"
-                                        value={clustering_base}
+                                        value={ordering_base}
                                         label="Ordering Base Data"
                                         onChange={handleClusteringBase}
                                     >
-                                        {cluster_sortings.length > 0
-                                            ? cluster_sortings.map((name) => (
+                                        {orderings.length > 0
+                                            ? orderings.map((name) => (
                                                   <MenuItem key={name} value={name}>
                                                       {capitalize(name)}
                                                   </MenuItem>
@@ -261,12 +261,12 @@ export function Parameters({ input_data, output_data, input_settings, output_set
                                         autoWidth={true}
                                         labelId="clustering-method-select-label"
                                         id="clustering-method-select"
-                                        value={clustering_method}
+                                        value={ordering_method}
                                         label="Ordering Method"
                                         onChange={handleClusteringMethod}
                                     >
-                                        {cur_clustering_methods.length > 0
-                                            ? cur_clustering_methods.map((name) => (
+                                        {cur_ordering_methods.length > 0
+                                            ? cur_ordering_methods.map((name) => (
                                                   <MenuItem key={name} value={name}>
                                                       {capitalize(name)}
                                                   </MenuItem>

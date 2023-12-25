@@ -43,7 +43,15 @@ def load_file(file_name):
     return data
 
 
-cache['forda'] = m.parse_JSON_file('forda')
+json_files = m.get_all_available_JSON_files()
+print(json_files)
+
+for json_file in json_files:
+    cache[json_file[:-5]] = m.parse_JSON_file(json_file)
+
+print(cache.keys())
+# cache['forda'] = m.parse_JSON_file('cnn-forda')
+# cache['forda'] = m.parse_JSON_file('resnet-forda')
 # cache['forda_normalized'] = m.parse_JSON_file('forda_normalized')
 
 
@@ -53,35 +61,35 @@ class Settings(BaseModel):
     
     layout: str = 'vertical'
 
-    raw: bool = True
-    raw_hist: bool = False
+    raw_data: bool = True
+    raw_data_histogram: bool = False
     activations: bool = True
-    activations_hist: bool = False
+    activations_histogram: bool = False
     attributions: bool = True
-    attributions_hist: bool = False
+    attributions_histogram: bool = False
     labels_pred: bool = True
     
     suggestions: bool = False
     
     raw_time_series_colormap: str = 'interpolateRdBu'
-    raw_time_series_hist_colormap: str = 'interpolateReds'
+    raw_time_series_histogram_colormap: str = 'interpolateReds'
 
     activations_colormap: str = 'interpolateReds'
-    activations_hist_colormap: str = 'interpolateReds'
+    activations_histogram_colormap: str = 'interpolateReds'
 
     attributions_colormap: str = 'interpolateRdBu'
-    attributions_hist_colormap: str = 'interpolateReds'
+    attributions_histogram_colormap: str = 'interpolateReds'
 
     predictions_colormap: str = 'viridis'
 
 
 @app.post('/api/getPixelImage/{file_name}')
-async def serve_image(file_name: str, settings: Settings, start: int = 0, end: int = -1, stage: str = '', clustering_base: str = '', clustering_method: str = '', attribution_method: str = ''):
+async def serve_image(file_name: str, settings: Settings, start: int = 0, end: int = -1, stage: str = '', ordering_base: str = '', ordering_method: str = '', attribution_method: str = ''):
     resolution_width = settings.resolution_width
     resolution_height = settings.resolution_height
 
     layout = settings.layout
-    
+
     settings_dict = settings.dict()
     data_to_show = []
     for k in settings_dict.keys():
@@ -92,52 +100,55 @@ async def serve_image(file_name: str, settings: Settings, start: int = 0, end: i
     
     loaded_data = load_file(file_name)
 
-    cluster_sorting = loaded_data.cluster_sorting
+    orderings = loaded_data.orderings
     data = loaded_data.data
     
     if stage == '':
         stage, _ = data.get_default()
     
-    if clustering_base == '':
-        clustering_base, _ = data.get(stage).get_default()
+    if ordering_base == '':
+        ordering_base, _ = data.get(stage).get_default()
 
-    if clustering_method == '':
-        clustering_method, _ = cluster_sorting.get(stage).get_default(clustering_base)
+    if ordering_method == '':
+        ordering_method, _ = orderings.get(stage).get_default(ordering_base)
 
     if attribution_method == '':
         attribution_method, _ = data.get(stage).get_default_attribution()
 
-    print(stage, clustering_base, clustering_method, attribution_method)
+    print(stage, attribution_method, ordering_base, ordering_method)
 
     collected_data = m.parse_model_to_dict(data.get(stage))
-    collected_data['attributions_hist'] = collected_data['attributions'][f'{attribution_method}_hist']
+    collected_data['attributions_histogram'] = collected_data['attributions'][f'{attribution_method}_histogram']
     collected_data['attributions'] = collected_data['attributions'][attribution_method]
-    
-    cluster_sorting_defaults = cluster_sorting.get(stage).get_default_clusterings()
-    cluster_sorting_defaults['attributions_hist'] = cluster_sorting_defaults['attributions'][f'{attribution_method}_hist']
-    cluster_sorting_defaults['attributions'] = cluster_sorting_defaults['attributions'][f'{attribution_method}']
-    cluster_sorting_defaults['None'] = ['None']
 
-    sorting = cluster_sorting.get(stage).get_clusterings(clustering_base, clustering_method, attribution_method)
+    orderings_defaults = orderings.get(stage).get_default_orderings()
+    orderings_defaults['attributions_histogram'] = orderings_defaults['attributions'][f'{attribution_method}_histogram']
+    orderings_defaults['attributions'] = orderings_defaults['attributions'][f'{attribution_method}']
+    orderings_defaults['None'] = ['None']
+
+    selected_ordering = orderings.get(stage).get_orderings(ordering_base, ordering_method, attribution_method)
+    print(selected_ordering)
     stages = data.get_set()
     attribution_methods = data.get(stage).get_attributions()
-    
-    if sorting is None:
-        sorting = np.array(range(len(collected_data[list(collected_data.keys())[0]])))
+
+    if selected_ordering is None:
+        ordering = np.array(range(len(collected_data[list(collected_data.keys())[0]])))
+    else:
+        ordering = selected_ordering['ordering']
 
     # slice to start and end and calculate width
     ret_tmp = {}
     max_samples = 0
-    tmp_sorting = sorting[start:end]
+    tmp_ordering = ordering[start:end]
 
     for k in collected_data:
         max_samples = max(max_samples, len(collected_data[k]))
-        ret_tmp[k] = collected_data[k][tmp_sorting].tolist()
-    tmp_sorting = tmp_sorting.tolist()
+        ret_tmp[k] = collected_data[k][tmp_ordering].tolist()
+    tmp_ordering = tmp_ordering.tolist()
 
     summary_data_std = {}
     for k in collected_data.keys():
-        tmp_data = collected_data[k][sorting]
+        tmp_data = collected_data[k][ordering]
 
         if len(tmp_data.shape) > 1:
             if tmp_data.shape[-1] > 10:
@@ -147,15 +158,15 @@ async def serve_image(file_name: str, settings: Settings, start: int = 0, end: i
         else:
             summary_data_std[k] = tmp_data.copy().tolist()
 
-    summary_data_std['None'] = np.std(collected_data['raw'][sorting], axis=1).tolist()
+    summary_data_std['None'] = np.std(collected_data['raw_data'][ordering], axis=1).tolist()
 
     data_generation = [
-        ['raw', 'MinMax', settings.raw_time_series_colormap, False],
-        ['raw_hist', 'Sqrt', settings.raw_time_series_hist_colormap, False],
+        ['raw_data', 'MinMax', settings.raw_time_series_colormap, False],
+        ['raw_data_histogram', 'Sqrt', settings.raw_time_series_histogram_colormap, False],
         ['activations', 'MinMax', settings.activations_colormap, False],
-        ['activations_hist', 'Sqrt', settings.activations_hist_colormap, False],
+        ['activations_histogram', 'Sqrt', settings.activations_histogram_colormap, False],
         ['attributions', 'MinMax', settings.attributions_colormap, True],
-        ['attributions_hist', 'Sqrt', settings.attributions_hist_colormap, False],
+        ['attributions_histogram', 'Sqrt', settings.attributions_histogram_colormap, False],
         ['labels_pred', 'MinMax', settings.predictions_colormap, False]
     ]
 
@@ -191,11 +202,11 @@ async def serve_image(file_name: str, settings: Settings, start: int = 0, end: i
             'stages': stages,
             'attribution_methods': attribution_methods,
             'max_samples': max_samples,
-            'cluster_sortings': cluster_sorting_defaults,
-            'cur_clustering_base': clustering_base,
-            'cur_clustering_method': clustering_method,
+            'orderings': orderings_defaults,
+            'cur_ordering_base': ordering_base,
+            'cur_ordering_method': ordering_method,
             'summary_data': summary_data_std,
-            'sorting_idc': tmp_sorting,
+            'ordering_idc': tmp_ordering,
             'data_splitters': proportion_for_image,
         }
    }
@@ -204,13 +215,18 @@ async def serve_image(file_name: str, settings: Settings, start: int = 0, end: i
 
 
 @app.post('/api/nearestneighbor/{file_name}/{idx}')
-async def serve_nearestneighbors(file_name: str, idx: int, settings: Settings, start: int = 0, end: int = -1, stage: str = '', clustering_base: str = '', clustering_method: str = '', attribution_method: str = ''):
+async def serve_nearestneighbors(file_name: str, idx: int, settings: Settings, start: int = 0, end: int = -1, stage: str = '', ordering_base: str = '', ordering_method: str = '', attribution_method: str = ''):
     pass
 
 
 @app.get('/api/getAvailableColors')
 async def get_available_colors():
     return JSONResponse(content=i.get_available_colormaps())
+
+
+@app.get('/api/getAvailableDatasets')
+async def get_available_datasets():
+    return JSONResponse(content=list(cache.keys()))
 
 
 @app.post('/api/getTimeSeriesForIdc/{file_name}')
@@ -226,14 +242,14 @@ async def get_time_series_for_idc(file_name: str, body: dict, stage: str = ''):
 
     loaded_data = load_file(file_name)
 
-    cluster_sorting = loaded_data.cluster_sorting
+    orderings = loaded_data.orderings
     data = loaded_data.data
 
     if stage == '':
         stage, _ = data.get_default()
 
     collected_data = m.parse_model_to_dict(data.get(stage))
-    selected_data = collected_data['raw'][selected_idc]
+    selected_data = collected_data['raw_data'][selected_idc]
 
     start = body['start'] * selected_data.shape[1]
     end = body['end'] * selected_data.shape[1]

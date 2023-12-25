@@ -292,3 +292,7 @@ dist
 
 .gitlab-ci.yml
 values.yaml
+preprocessing/data/
+preprocessing/results
+
+*__test__*

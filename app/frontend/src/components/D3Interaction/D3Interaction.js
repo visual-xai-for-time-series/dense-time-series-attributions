@@ -4,12 +4,12 @@ import React, { useRef, useEffect, useState } from 'react';
 
 import { round } from './../Helper/Helper';
 
-import { D3LinePlot } from './D3LinePlot/D3LinePlot';
+import { PercentilePlot } from './PercentilePlot/PercentilePlot';
 
 import './D3Interaction.css';
 
 export function D3Interaction({ input_data, output_data, input_settings }) {
-    const [brushedList, setBrushedList] = useState([]);
+    const [percentilePlotsData, setPercentilePlotsData] = useState({});
     const brushListKey = useRef(0);
 
     const x_pos = input_data.x_pos;
@@ -20,9 +20,11 @@ export function D3Interaction({ input_data, output_data, input_settings }) {
     const width = input_data.width;
     const height = input_data.height;
 
-    const sorting_idc = input_data.sorting_idc;
+    const ordering_idc = input_data.ordering_idc;
 
     const data_splitters = input_data.data_splitters;
+
+    const dataset = input_data.dataset;
 
     const svg_style = {
         top: y_pos,
@@ -35,23 +37,39 @@ export function D3Interaction({ input_data, output_data, input_settings }) {
     const svg_ref = useRef();
     const brush_ref = useRef();
 
-    const addToBrushList = (element) => {
-        setBrushedList((v) => [...v, element]);
+    const addToPercentilePlotsData = (key, element) => {
+        // const new_element = {};
+        // new_element[key] = element;
+        percentilePlotsData[key] = element;
+        // setPercentilePlotsData((v) => ({ ...v, ...new_element }));
+        const newData = { ...percentilePlotsData };
+        newData[key] = element;
+        setPercentilePlotsData(newData);
     };
 
-    const removeFromBrushList = (key) => {
+    const removeFromPercentilePlotsData = (key) => {
         d3.select(svg_ref.current)
             .selectAll('.tmp_brushers')
             .filter(function () {
                 return Number(d3.select(this).attr('data-key')) === Number(key);
             })
             .remove();
-        setBrushedList((prevState) => prevState.filter((item) => Number(item.key) !== Number(key)));
+        const newData = { ...percentilePlotsData };
+        newData[key] = 0;
+        delete newData[key];
+    };
+
+    const openPercentilePlot = (key) => {
+        const selectedItem = percentilePlotsData[key];
+        selectedItem['open'] = true;
+        const newData = { ...percentilePlotsData };
+        newData[key] = selectedItem;
+        setPercentilePlotsData(newData);
     };
 
     useEffect(() => {
-        if (sorting_idc) {
-            const row_len = sorting_idc.length;
+        if (ordering_idc) {
+            const row_len = ordering_idc.length;
 
             const samples = layout === 'vertical' ? Math.max(1, round(height / row_len)) : height;
             const dimensions = layout === 'vertical' ? width : Math.max(1, round(width / row_len));
@@ -62,20 +80,20 @@ export function D3Interaction({ input_data, output_data, input_settings }) {
             const svg = d3.select(svg_ref.current);
             const rows = svg.append('g').attr('class', 'rows');
 
-            div.selectAll('*').remove();
-            const tooltip_div = div
-                .append('div')
-                .style('opacity', 0)
-                .attr('class', 'tooltip')
-                .style('background-color', 'white')
-                .style('border', 'solid')
-                .style('border-width', '2px')
-                .style('border-radius', '5px')
-                .style('padding', '5px');
+            // div.selectAll('*').remove();
+            // const tooltip_div = div
+            //     .append('div')
+            //     .style('opacity', 0)
+            //     .attr('class', 'tooltip')
+            //     .style('background-color', 'white')
+            //     .style('border', 'solid')
+            //     .style('border-width', '2px')
+            //     .style('border-radius', '5px')
+            //     .style('padding', '5px');
 
             rows.selectAll('*').remove();
             rows.selectAll('.sample-row')
-                .data(sorting_idc)
+                .data(ordering_idc)
                 .enter()
                 // .append('g')
                 // .attr('class', 'sample-row')
@@ -140,20 +158,15 @@ export function D3Interaction({ input_data, output_data, input_settings }) {
                         return d3.select(d).attr('data-idx');
                     });
 
-                const lineplot_data = {
+                const newPercentilePlotData = {
                     idc: idc,
                     start: relative_pos_ration,
                     end: relative_pos_end_ration,
                     key: key,
+                    open: false,
+                    dataset: dataset,
                 };
-                const new_lineplot = (
-                    <D3LinePlot
-                        key={key}
-                        input_data={lineplot_data}
-                        output_data={removeFromBrushList}
-                    ></D3LinePlot>
-                );
-                addToBrushList(new_lineplot);
+                addToPercentilePlotsData(key, newPercentilePlotData);
 
                 let margin = 0;
                 data_splitters.forEach((element, idx) => {
@@ -179,7 +192,17 @@ export function D3Interaction({ input_data, output_data, input_settings }) {
                             .attr('height', rectHeight)
                             .attr('fill', rect_color)
                             .attr('stroke', borderColor)
-                            .attr('stroke-width', borderWidth);
+                            .attr('stroke-width', borderWidth)
+                            .on('click', () => {
+                                openPercentilePlot(key);
+                            });
+
+                        svg.append('text')
+                            .attr('class', 'tmp_brushers')
+                            .attr('data-key', key)
+                            .attr('x', x_2 - 20)
+                            .attr('y', rectY + 15)
+                            .text('' + key);
                     }
                     margin += element;
                 });
@@ -205,7 +228,7 @@ export function D3Interaction({ input_data, output_data, input_settings }) {
                 margin += element;
             });
         }
-    }, [sorting_idc]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [ordering_idc]); // eslint-disable-line react-hooks/exhaustive-deps
 
     return (
         <div className="interaction">
@@ -213,7 +236,15 @@ export function D3Interaction({ input_data, output_data, input_settings }) {
                 <g ref={brush_ref} />
             </svg>
             <div ref={div_ref}></div>
-            {brushedList}
+            <div>
+                {Object.entries(percentilePlotsData).map(([key, percentilePlotData]) => (
+                    <PercentilePlot
+                        key={key}
+                        input_data={percentilePlotData}
+                        output_data={removeFromPercentilePlotsData}
+                    ></PercentilePlot>
+                ))}
+            </div>
         </div>
     );
 }

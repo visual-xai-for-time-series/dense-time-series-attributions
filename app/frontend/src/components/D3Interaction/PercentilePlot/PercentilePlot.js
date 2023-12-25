@@ -20,27 +20,29 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import Paper from '@mui/material/Paper';
 import Draggable from 'react-draggable';
 
-function PaperComponent(props) {
-    return <Paper {...props} />;
-}
+// function PaperComponent(props) {
+//     return <Paper {...props} />;
+// }
 
-export function D3LinePlot({ status, input_data, output_data }) {
+export function PercentilePlot({ input_data, output_data }) {
     const [img_data, setImgData] = useState(null);
-    const [open, setOpen] = useState(status);
+    const [open, setOpen] = useState(false);
+
+    console.log(input_data);
 
     const idc = input_data.idc;
     const start = input_data.start;
     const end = input_data.end;
+    const open_toggle = input_data.open;
 
     const key = input_data.key;
+    const dataset = input_data.dataset;
 
     const base_url = process.env.REACT_APP_API_URL ? process.env.REACT_APP_API_URL : '';
 
-    let start_dataset = 'forda';
-
     useEffect(() => {
         if (idc.length > 0) {
-            const url = base_url + '/api/getTimeSeriesForIdc/' + start_dataset;
+            const url = base_url + '/api/getTimeSeriesForIdc/' + dataset;
 
             d3.json(url, {
                 method: 'POST',
@@ -60,7 +62,13 @@ export function D3LinePlot({ status, input_data, output_data }) {
         }
     }, [idc]); // eslint-disable-line react-hooks/exhaustive-deps
 
+    useEffect(() => {
+        console.log(open_toggle);
+        setOpen(open_toggle);
+    }, [open_toggle]);
+
     const handleClose = () => {
+        input_data.open = false;
         setOpen(false);
     };
 
@@ -81,7 +89,7 @@ export function D3LinePlot({ status, input_data, output_data }) {
                     open={open}
                     // onClose={handleClose}
                     hideBackdrop
-                    PaperComponent={PaperComponent}
+                    // PaperComponent={PaperComponent}
                     aria-labelledby="draggable-dialog-title"
                     sx={{
                         width: 'fit-content',
@@ -101,43 +109,34 @@ export function D3LinePlot({ status, input_data, output_data }) {
                         </div>
                     </DialogTitle>
                     <DialogContent>
-                        <DialogContentText>
-                            <img
-                                src={`data:image/jpeg;base64,${img_data}`}
-                                alt="secret"
-                                style={{ maxWidth: '100%', maxHeight: '100%' }}
-                            />
-
-                            <Accordion>
-                                <AccordionSummary
-                                    expandIcon={<ExpandMoreIcon />}
-                                    aria-controls="panel1a-content"
-                                    id="panel1a-header"
-                                >
-                                    <Typography>Indices</Typography>
-                                </AccordionSummary>
-                                <AccordionDetails>
-                                    <Typography>
-                                        {idc.length}: [
-                                        {idc.map((item, index) => (
-                                            <span key={index}>
-                                                {index > 0 ? ', ' : ''}
-                                                {item}
-                                            </span>
-                                        ))}
-                                        ]
-                                    </Typography>
-                                </AccordionDetails>
-                            </Accordion>
-                        </DialogContentText>
+                        <img
+                            src={`data:image/jpeg;base64,${img_data}`}
+                            alt="secret"
+                            style={{ maxWidth: '100%', maxHeight: '100%' }}
+                        />
+                        <Accordion>
+                            <AccordionSummary
+                                expandIcon={<ExpandMoreIcon />}
+                                aria-controls="panel1a-content"
+                                id="panel1a-header"
+                            >
+                                Indices
+                            </AccordionSummary>
+                            <AccordionDetails>
+                                {idc.length}: [
+                                {idc.map((item, index) => (
+                                    <span key={index}>
+                                        {index > 0 ? ', ' : ''}
+                                        {item}
+                                    </span>
+                                ))}
+                                ]
+                            </AccordionDetails>
+                        </Accordion>
                     </DialogContent>
                     <DialogActions>
-                        <Button autoFocus onClick={handleClose}>
-                            Close
-                        </Button>
-                        <Button autoFocus onClick={handleRemove}>
-                            Remove
-                        </Button>
+                        <Button onClick={handleClose}>Close</Button>
+                        <Button onClick={handleRemove}>Remove</Button>
                     </DialogActions>
                 </Dialog>
             </Draggable>

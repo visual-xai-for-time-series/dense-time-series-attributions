@@ -33,7 +33,7 @@ export function Selector({ input, output }) {
             }}
             size="small"
         >
-            <InputLabel id={id_label}>Time Series Colormap</InputLabel>
+            <InputLabel id={id_label}>{label}</InputLabel>
             <Select
                 autoWidth={true}
                 labelId={id_label}

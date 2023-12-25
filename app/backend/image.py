@@ -68,9 +68,8 @@ def discretizer(data):
     return np.apply_along_axis(disc, 1, data).reshape(*shape)
 
 
-def only_quantiles(data, axis=1):
+def only_quantiles(data, axis=1, quant_range=0.1):
     def quant(data):
-        quant_range = 0.1
         lower_bound = np.quantile(data, quant_range)
         upper_bound = np.quantile(data, 1 - quant_range)
         
@@ -175,7 +174,8 @@ def idc_to_image(data, highlight_start=0, highlight_end=0):
     max_ = np.max(data)
     min_ = np.min(data)
 
-    plt.fill_between([highlight_start, highlight_end], min_, max_, color='red', alpha=0.1)
+    if highlight_start != highlight_end:
+        plt.fill_between([highlight_start, highlight_end], min_, max_, color='red', alpha=0.1)
 
     for ts in data:
         plt.plot(ts, color='gray', alpha=0.2)

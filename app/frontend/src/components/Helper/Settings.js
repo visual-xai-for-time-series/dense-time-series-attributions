@@ -67,10 +67,34 @@ export function Settings({ input_settings, output_settings }) {
         d3.json(base_url + '/api/getAvailableColors', {
             method: 'GET',
         }).then((data) => {
+            console.log(data);
             // local_settings.available_colormaps
+            // setSettings({
+            //     ...local_settings,
+            //     available_colormaps: data,
+            // });
+
+            d3.json(base_url + '/api/getAvailableDatasets', {
+                method: 'GET',
+            }).then((datasets) => {
+                console.log(datasets);
+                setSettings({
+                    ...local_settings,
+                    available_colormaps: data,
+                    available_datasets: datasets,
+                });
+            });
+        });
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    useEffect(() => {
+        d3.json(base_url + '/api/getAvailableDatasets', {
+            method: 'GET',
+        }).then((data) => {
+            console.log(data);
             setSettings({
                 ...local_settings,
-                available_colormaps: data,
+                available_datasets: data,
             });
         });
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -164,6 +188,22 @@ export function Settings({ input_settings, output_settings }) {
                             <Grid item xs={1}></Grid>
                             <Grid item xs={10}>
                                 <FormGroup row>
+                                    <Selector
+                                        input={{
+                                            id: 'dataset-selector',
+                                            name: 'Dataset',
+                                            available_options: local_settings.available_datasets,
+                                            value: local_settings.dataset,
+                                        }}
+                                        output={handleSelect}
+                                    ></Selector>
+                                </FormGroup>
+                            </Grid>
+                            <Grid item xs={1}></Grid>
+
+                            <Grid item xs={1}></Grid>
+                            <Grid item xs={10}>
+                                <FormGroup row>
                                     <FormControlLabel
                                         control={
                                             <Checkbox
@@ -177,9 +217,9 @@ export function Settings({ input_settings, output_settings }) {
                                     <FormControlLabel
                                         control={
                                             <Checkbox
-                                                checked={local_settings.show_raw_data_hist}
+                                                checked={local_settings.show_raw_data_histogram}
                                                 onChange={handleCheck}
-                                                name="show_raw_data_hist"
+                                                name="show_raw_data_histogram"
                                             />
                                         }
                                         label="Raw Time Series Histogram"
@@ -203,10 +243,10 @@ export function Settings({ input_settings, output_settings }) {
 
                                     <Selector
                                         input={{
-                                            id: 'raw-time-series-hist',
-                                            name: 'Raw Time Series Hist Colormap',
+                                            id: 'raw-time-series-histogram',
+                                            name: 'Raw Time Series Histogram Colormap',
                                             available_options: local_settings.available_colormaps,
-                                            value: local_settings.raw_time_series_hist_colormap,
+                                            value: local_settings.raw_time_series_histogram_colormap,
                                         }}
                                         output={handleSelect}
                                     ></Selector>
@@ -230,9 +270,9 @@ export function Settings({ input_settings, output_settings }) {
                                     <FormControlLabel
                                         control={
                                             <Checkbox
-                                                checked={local_settings.show_activations_hist}
+                                                checked={local_settings.show_activations_histogram}
                                                 onChange={handleCheck}
-                                                name="show_activations_hist"
+                                                name="show_activations_histogram"
                                             />
                                         }
                                         label="Model Activations Histogram"
@@ -256,10 +296,10 @@ export function Settings({ input_settings, output_settings }) {
 
                                     <Selector
                                         input={{
-                                            id: 'activations-hist',
-                                            name: 'Activations Hist Colormap',
+                                            id: 'activations-histogram',
+                                            name: 'Activations Histogram Colormap',
                                             available_options: local_settings.available_colormaps,
-                                            value: local_settings.activations_hist_colormap,
+                                            value: local_settings.activations_histogram_colormap,
                                         }}
                                         output={handleSelect}
                                     ></Selector>
@@ -283,9 +323,9 @@ export function Settings({ input_settings, output_settings }) {
                                     <FormControlLabel
                                         control={
                                             <Checkbox
-                                                checked={local_settings.show_attributions_hist}
+                                                checked={local_settings.show_attributions_histogram}
                                                 onChange={handleCheck}
-                                                name="show_attributions_hist"
+                                                name="show_attributions_histogram"
                                             />
                                         }
                                         label="Model Attributions Histogram"
@@ -309,10 +349,10 @@ export function Settings({ input_settings, output_settings }) {
 
                                     <Selector
                                         input={{
-                                            id: 'attributions-hist',
-                                            name: 'Attributions Hist Colormap',
+                                            id: 'attributions-histogram',
+                                            name: 'Attributions Histogram Colormap',
                                             available_options: local_settings.available_colormaps,
-                                            value: local_settings.attributions_hist_colormap,
+                                            value: local_settings.attributions_histogram_colormap,
                                         }}
                                         output={handleSelect}
                                     ></Selector>

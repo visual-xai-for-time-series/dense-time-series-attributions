@@ -13,6 +13,8 @@ import Grid from '@mui/material/Grid';
 import Item from '@mui/material/Grid';
 import Box from '@mui/material/Box';
 
+import { Steps } from 'intro.js-react';
+
 import { alpha } from '@mui/material';
 
 import CircularProgress from '@mui/material/CircularProgress';
@@ -33,7 +35,7 @@ function App() {
         10;
 
     let start_layout = 'horizontal';
-    let start_dataset = 'forda';
+    let start_dataset = 'cnn-forda';
 
     let reloader = false;
 
@@ -43,32 +45,35 @@ function App() {
     };
 
     const [settings, setSettings] = useState({
+        dataset: start_dataset,
+        available_datasets: [],
+
         layout: start_layout,
         layouts: ['vertical', 'horizontal'],
 
         show_raw_data: true,
-        show_raw_data_hist: false,
+        show_raw_data_histogram: false,
         show_activations: true,
-        show_activations_hist: false,
+        show_activations_histogram: false,
         show_attributions: true,
-        show_attributions_hist: false,
+        show_attributions_histogram: false,
         show_labels_pred: true,
 
         available_colormaps: [],
         raw_time_series_colormap: 'interpolateRdBu',
-        raw_time_series_hist_colormap: 'interpolateReds',
+        raw_time_series_histogram_colormap: 'interpolateReds',
         activations_colormap: 'interpolateReds',
-        activations_hist_colormap: 'interpolateReds',
+        activations_histogram_colormap: 'interpolateReds',
         attributions_colormap: 'interpolateRdBu',
-        attributions_hist_colormap: 'interpolateReds',
+        attributions_histogram_colormap: 'interpolateReds',
         predictions_colormap: 'viridis',
     });
 
     const [parameters, setParameters] = useState({
-        cluster_sortings: {},
+        orderings: {},
         max_samples: null,
-        cur_clustering_base: '',
-        cur_clustering_method: '',
+        cur_ordering_base: '',
+        cur_ordering_method: '',
         cur_stage: '',
         cur_attribution_method: '',
         summary_data: null,
@@ -83,6 +88,7 @@ function App() {
         width: null,
         height: null,
         data: null,
+        dataset: null,
     });
 
     const [error, setError] = useState(null);
@@ -90,6 +96,8 @@ function App() {
     const [img_data, setImageData] = useState(null);
 
     const [loading, setLoading] = useState(true);
+
+    const [stepsEnabled, setStepsEnabled] = useState(true);
 
     const ref = useRef();
 
@@ -100,7 +108,7 @@ function App() {
         start_end = parseInt((client_height - parameter_height) / 2);
     }
 
-    const [url_param, setUrlParam] = useState(`${start_dataset}?start=0&end=${start_end}`);
+    const [url_param, setUrlParam] = useState(`${settings.dataset}?start=0&end=${start_end}`);
 
     const loadElements = { labels: false, attributions: false, activations: false, rawdata: false };
     const handleLoading = (key, param) => {
@@ -126,14 +134,14 @@ function App() {
         const end = new_parameters.sample_idc[1];
 
         const stage = new_parameters.stage;
-        const clustering_base = new_parameters.clustering_base;
-        const clustering_method = new_parameters.clustering_method;
+        const ordering_base = new_parameters.ordering_base;
+        const ordering_method = new_parameters.ordering_method;
         const attribution_method = new_parameters.attribution_method;
 
         reloader = !reloader;
 
         setUrlParam(
-            `${start_dataset}?start=${start}&end=${end}&stage=${stage}&clustering_base=${clustering_base}&clustering_method=${clustering_method}&attribution_method=${attribution_method}&reloader=${reloader}`
+            `${settings.dataset}?start=${start}&end=${end}&stage=${stage}&ordering_base=${ordering_base}&ordering_method=${ordering_method}&attribution_method=${attribution_method}&reloader=${reloader}`
         );
     };
 
@@ -159,24 +167,24 @@ function App() {
                 resolution_height: client_height,
 
                 raw: settings.show_raw_data,
-                raw_hist: settings.show_raw_data_hist,
+                raw_data_histogram: settings.show_raw_data_histogram,
 
                 activations: settings.show_activations,
-                activations_hist: settings.show_activations_hist,
+                activations_histogram: settings.show_activations_histogram,
 
                 attributions: settings.show_attributions,
-                attributions_hist: settings.show_attributions_hist,
+                attributions_histogram: settings.show_attributions_histogram,
 
                 labels_pred: settings.show_labels_pred,
 
                 raw_time_series_colormap: settings.raw_time_series_colormap,
-                raw_time_series_hist_colormap: settings.raw_time_series_hist_colormap,
+                raw_time_series_histogram_colormap: settings.raw_time_series_histogram_colormap,
 
                 activations_colormap: settings.activations_colormap,
-                activations_hist_colormap: settings.activations_hist_colormap,
+                activations_histogram_colormap: settings.activations_histogram_colormap,
 
                 attributions_colormap: settings.attributions_colormap,
-                attributions_hist_colormap: settings.attributions_hist_colormap,
+                attributions_histogram_colormap: settings.attributions_histogram_colormap,
 
                 predictions_colormap: settings.predictions_colormap,
             }),
@@ -191,23 +199,23 @@ function App() {
 
                 console.log(data.meta);
 
-                const cluster_sortings = data.meta.cluster_sortings;
+                const orderings = data.meta.orderings;
                 const max_samples = data.meta.max_samples;
-                const cur_clustering_base = data.meta.cur_clustering_base;
-                const cur_clustering_method = data.meta.cur_clustering_method;
+                const cur_ordering_base = data.meta.cur_ordering_base;
+                const cur_ordering_method = data.meta.cur_ordering_method;
                 const summary_data = data.meta.summary_data;
                 const cur_stage = data.meta.cur_stage;
                 const cur_attribution_method = data.meta.cur_attribution_method;
                 const stages = data.meta.stages;
                 const attribution_methods = data.meta.attribution_methods;
-                const sorting_idc = data.meta.sorting_idc;
+                const ordering_idc = data.meta.ordering_idc;
                 const data_splitters = data.meta.data_splitters;
 
                 setParameters({
-                    cluster_sortings: cluster_sortings,
+                    orderings: orderings,
                     max_samples: max_samples,
-                    cur_clustering_base: cur_clustering_base,
-                    cur_clustering_method: cur_clustering_method,
+                    cur_ordering_base: cur_ordering_base,
+                    cur_ordering_method: cur_ordering_method,
                     cur_stage: cur_stage,
                     cur_attribution_method: cur_attribution_method,
                     summary_data: summary_data,
@@ -223,9 +231,10 @@ function App() {
                     y_pos: rect.top,
                     width: rect.width,
                     height: rect.height,
-                    sorting_idc: sorting_idc,
+                    ordering_idc: ordering_idc,
                     start_end: start_end,
                     data_splitters: data_splitters,
+                    dataset: settings.dataset,
                 };
                 setInteractions(interactions);
 
@@ -241,10 +250,33 @@ function App() {
         return <div>Error: {error.message}</div>;
     }
 
+    const steps = [
+        {
+            element: '.dense-pixel',
+            intro: 'Dense-Pixel Visualization',
+            position: 'right',
+            tooltipClass: 'myTooltipClass',
+            highlightClass: 'myHighlightClass',
+        },
+        {
+            element: '.selector2',
+            intro: 'test 2',
+        },
+        {
+            element: '.selector3',
+            intro: 'test 3',
+        },
+    ];
+
+    const onExit = () => {
+        setStepsEnabled(false);
+    };
+
     return (
         <div className="App">
+            <Steps enabled={stepsEnabled} steps={steps} initialStep={0} onExit={onExit} />
             <Grid container spacing={0}>
-                <Grid item xs={12}>
+                <Grid item xs={12} className="dense-pixel">
                     <Item>
                         <Image data={img_data} meta={meta_img} ref={ref}></Image>
                         <D3Interaction
@@ -255,6 +287,7 @@ function App() {
                     </Item>
                 </Grid>
                 <Parameters
+                    className="parameters"
                     input_data={parameters}
                     output_data={changeUrlParam}
                     input_settings={settings}
