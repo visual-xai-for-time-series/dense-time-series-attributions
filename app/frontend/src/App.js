@@ -7,6 +7,8 @@ import React, { useState, useEffect, useRef } from 'react';
 
 import './App.css';
 
+import 'intro.js/introjs.css';
+
 import * as d3 from 'd3';
 
 import Grid from '@mui/material/Grid';
@@ -97,7 +99,7 @@ function App() {
 
     const [loading, setLoading] = useState(true);
 
-    const [stepsEnabled, setStepsEnabled] = useState(true);
+    const [stepsEnabled, setStepsEnabled] = useState(false);
 
     const ref = useRef();
 
@@ -240,6 +242,7 @@ function App() {
 
                 console.log('Finish');
                 setLoading(false);
+                setStepsEnabled(true);
             })
             .catch((reason) => {
                 setError(reason);
@@ -253,18 +256,12 @@ function App() {
     const steps = [
         {
             element: '.dense-pixel',
-            intro: 'Dense-Pixel Visualization',
+            intro: 'Dense-Pixel Visualization with each pixel representing a certain value in the data.',
             position: 'right',
-            tooltipClass: 'myTooltipClass',
-            highlightClass: 'myHighlightClass',
         },
         {
-            element: '.selector2',
-            intro: 'test 2',
-        },
-        {
-            element: '.selector3',
-            intro: 'test 3',
+            element: '.parameters',
+            intro: 'Parameter Settings',
         },
     ];
 

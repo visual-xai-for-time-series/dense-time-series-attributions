@@ -50,9 +50,6 @@ for json_file in json_files:
     cache[json_file[:-5]] = m.parse_JSON_file(json_file)
 
 print(cache.keys())
-# cache['forda'] = m.parse_JSON_file('cnn-forda')
-# cache['forda'] = m.parse_JSON_file('resnet-forda')
-# cache['forda_normalized'] = m.parse_JSON_file('forda_normalized')
 
 
 class Settings(BaseModel):
