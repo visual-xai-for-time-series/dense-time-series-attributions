@@ -226,6 +226,12 @@ def convert_keys_to_lower(dictionary):
 
 
 def download_json(url, file_path):
+    directory = os.path.dirname(file_path)
+
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+        print(f'Directory {directory} created.')
+
     if os.path.exists(file_path):
         print(f'File {file_path} already exists. Skipping download.')
         return
