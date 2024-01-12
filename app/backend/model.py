@@ -1,18 +1,17 @@
-from __future__ import annotations
-
 import os
 import json
 import time
 
-from pydantic import BaseModel, validator
-
-from pydantic.tools import parse_obj_as
-
-from typing import Optional, Any
-
 import dataclasses
 
 import numpy as np
+
+import urllib.request
+
+from typing import Optional, Any
+
+from pydantic import BaseModel, validator
+from pydantic.tools import parse_obj_as
 
 
 def list_to_np(x):
@@ -226,8 +225,32 @@ def convert_keys_to_lower(dictionary):
         return dictionary
 
 
-def get_all_available_JSON_files():
-    return [file for file in os.listdir('data/') if file.endswith('.json')]
+def download_json(url, file_path):
+    if os.path.exists(file_path):
+        print(f'File {file_path} already exists. Skipping download.')
+        return
+
+    try:
+        with urllib.request.urlopen(url) as response:
+            json_content = json.loads(response.read().decode('utf-8'))
+            with open(file_path, 'w') as file:
+                json.dump(json_content, file)
+            
+            print(f'JSON file downloaded and saved to {file_path}')
+    except Exception as e:
+        print(f'Failed to download JSON. Error: {e}')
+
+
+def get_all_available_JSON_files(download=True):
+    data_path = 'data/'
+    if download:
+        files = [
+            ('https://data.time-series-xai.dbvis.de/davots/cnn-forda.json', 'cnn-forda.json'),
+            ('https://data.time-series-xai.dbvis.de/davots/resnet-forda.json', 'resnet-forda.json'),
+        ]
+        for f in files:
+            download_json(f[0], os.path.join(data_path, f[1]))
+    return [file for file in os.listdir(data_path) if file.endswith('.json')]
 
 
 def parse_JSON_file(file_path):

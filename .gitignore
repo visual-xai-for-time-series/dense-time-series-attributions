@@ -296,3 +296,5 @@ preprocessing/data/
 preprocessing/results
 
 *__test__*
+
+*.json
