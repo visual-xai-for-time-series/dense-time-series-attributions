@@ -24,8 +24,11 @@ def dict_to_np(x):
     elif isinstance(x, list):
         return list_to_np(x)
     else:
-        print(x)
         return {}
+
+
+def nothing(x):
+    return x
 
 
 class StageData(BaseModel):
@@ -137,17 +140,25 @@ class OrderingData(BaseModel):
 
 
     def get_default(self, base_data):
+        
+        def get_best_score(data):
+            return sorted([[k, v['score'][0]] for k, v in data.items()], key=lambda x: x[1])[0][0]
+
         if base_data == 'raw_data':
-            m = list(self.raw_data.keys())[0]
+            m = get_best_score(self.raw_data)
+            # m = list(self.raw_data.keys())[0]
             return m, self.raw_data[m]
         if base_data == 'activations':
-            m = list(self.activations.keys())[0]
+            m = get_best_score(self.activations)
+            # m = list(self.activations.keys())[0]
             return m, self.activations[m]
         if base_data == 'raw_data_histogram':
-            m = list(self.raw_data_histogram.keys())[0]
+            m = get_best_score(self.raw_data_histogram)
+            # m = list(self.raw_data_histogram.keys())[0]
             return m, self.raw_data_histogram[m]
         if base_data == 'activations_histogram':
-            m = list(self.activations_histogram.keys())[0]
+            m = get_best_score(self.activations_histogram)
+            # m = list(self.activations_histogram.keys())[0]
             return m, self.activations_histogram[m]
         return None
 
@@ -210,10 +221,111 @@ class Orderings(BaseModel):
         return None
 
 
+class InterestingnessData(BaseModel):
+    raw_data: dict[str, Any]
+    activations: dict[str, Any]
+    attributions: dict[str, Any]
+
+    raw_data_histogram: Optional[dict[str, Any]] = {}
+    activations_histogram: Optional[dict[str, Any]] = {}
+    attributions_histogram: Optional[dict[str, Any]] = {}
+
+    labels: Optional[dict[str, Any]] = {}
+    predictions: Optional[dict[str, Any]] = {}
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    _raw_data = validator('raw_data', pre=True, allow_reuse=True)(nothing)
+    _activations = validator('activations', pre=True, allow_reuse=True)(nothing)
+    _attributions = validator('attributions', pre=True, allow_reuse=True)(nothing)
+
+    _raw_data_histogram = validator('raw_data_histogram', pre=True, allow_reuse=True)(nothing)
+    _activations_histogram = validator('activations_histogram', pre=True, allow_reuse=True)(nothing)
+    _attributions_histogram = validator('attributions_histogram', pre=True, allow_reuse=True)(nothing)
+
+    _labels = validator('labels', pre=True, allow_reuse=True)(nothing)
+    _predictions = validator('predictions', pre=True, allow_reuse=True)(nothing)
+
+
+    def get_default(self, base_data):
+        if base_data == 'raw_data':
+            m = list(self.raw_data.keys())[0]
+            return m, self.raw_data[m]
+        if base_data == 'activations':
+            m = list(self.activations.keys())[0]
+            return m, self.activations[m]
+        if base_data == 'raw_data_histogram':
+            m = list(self.raw_data_histogram.keys())[0]
+            return m, self.raw_data_histogram[m]
+        if base_data == 'activations_histogram':
+            m = list(self.activations_histogram.keys())[0]
+            return m, self.activations_histogram[m]
+        return None
+
+
+    def get_default_interestingness(self):
+        return {
+            'raw_data': list(self.raw_data.keys()),
+            'activations': list(self.activations.keys()),
+            'raw_data_histogram': list(self.raw_data_histogram.keys()),
+            'activations_histogram': list(self.activations_histogram.keys()),
+            'labels': list(self.labels.keys()),
+            'predictions': list(self.predictions.keys()),
+            'attributions': {k: list(v.keys()) for k, v in self.attributions.items()},
+        }
+
+
+    def get_interestingness(self, base_data, method, attribution=None):
+        if base_data == 'raw':
+            return self.raw[method]
+        if base_data == 'activations':
+            return self.activations[method]
+        if base_data == 'raw_histogram':
+            return self.raw_histogram[method]
+        if base_data == 'activations_histogram':
+            return self.activations_histogram[method]
+        if base_data == 'labels':
+            return self.labels[method]
+        if base_data == 'predictions':
+            return self.predictions[method]
+        if base_data == 'attributions':
+            return self.attributions[attribution][method]
+        if base_data == 'attributions_histogram':
+            return self.attributions[f'{attribution}_histogram'][method]
+        return None
+
+
+class Interestingness(BaseModel):
+    train: Optional[InterestingnessData]
+    test: Optional[InterestingnessData]
+    validation: Optional[InterestingnessData]
+
+
+    def get_default(self):
+        if self.train is not None:
+            return 'train', self.train
+        if self.test is not None:
+            return 'test', self.test
+        if self.validation is not None:
+            return 'validation', self.validation
+        return None
+
+
+    def get(self, name):
+        if name == 'train':
+            return self.train
+        if name == 'test':
+            return self.test
+        if name == 'validation':
+            return self.validation
+        return None
+
+
 class Base(BaseModel):
     data: BaseData
     orderings: Orderings
-    interestingness: Optional[Any]
+    interestingness: Optional[Interestingness]
 
 
 def convert_keys_to_lower(dictionary):

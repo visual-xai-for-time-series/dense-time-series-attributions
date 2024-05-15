@@ -97,8 +97,9 @@ async def serve_image(file_name: str, settings: Settings, start: int = 0, end: i
     
     loaded_data = load_file(file_name)
 
-    orderings = loaded_data.orderings
     data = loaded_data.data
+    orderings = loaded_data.orderings
+    interestingness = loaded_data.interestingness
     
     if stage == '':
         stage, _ = data.get_default()
@@ -112,7 +113,7 @@ async def serve_image(file_name: str, settings: Settings, start: int = 0, end: i
     if attribution_method == '':
         attribution_method, _ = data.get(stage).get_default_attribution()
 
-    print(stage, attribution_method, ordering_base, ordering_method)
+    print(start, end, stage, attribution_method, ordering_base, ordering_method)
 
     collected_data = m.parse_model_to_dict(data.get(stage))
     collected_data['attributions_histogram'] = collected_data['attributions'][f'{attribution_method}_histogram']
@@ -132,6 +133,17 @@ async def serve_image(file_name: str, settings: Settings, start: int = 0, end: i
         ordering = np.array(range(len(collected_data[list(collected_data.keys())[0]])))
     else:
         ordering = selected_ordering['ordering']
+
+    print(selected_ordering)
+
+    interestingness_idc = interestingness.get(stage).get_interestingness(ordering_base, ordering_method, attribution_method)
+    print(interestingness_idc)
+    selected_interestingness_idc = []
+    if interestingness_idc:
+        for idx in interestingness_idc:
+            if start < idx[0][0] and idx[0][1] < end:
+                selected_interestingness_idc.append(idx)
+    print(selected_interestingness_idc)
 
     # slice to start and end and calculate width
     ret_tmp = {}
@@ -184,9 +196,9 @@ async def serve_image(file_name: str, settings: Settings, start: int = 0, end: i
 
     proportion_sum = sum(proportion_for_image)
     if layout == 'horizontal':
-        proportion_for_image = [x/proportion_sum * resolution_height for x in proportion_for_image]
+        proportion_for_image_scaled = [x/proportion_sum * resolution_height for x in proportion_for_image]
     else:
-        proportion_for_image = [x/proportion_sum * resolution_width for x in proportion_for_image]
+        proportion_for_image_scaled = [x/proportion_sum * resolution_width for x in proportion_for_image]
 
     image = i.data_to_image(data_for_image, resolution=[resolution_width, resolution_height], direction=layout)
     image_base64 = base64.b64encode(image.read())
@@ -194,17 +206,24 @@ async def serve_image(file_name: str, settings: Settings, start: int = 0, end: i
     ret_tmp = {
        'image': image_base64,
        'meta': {
-            'cur_stage': stage,
-            'cur_attribution_method': attribution_method,
             'stages': stages,
             'attribution_methods': attribution_methods,
-            'max_samples': max_samples,
             'orderings': orderings_defaults,
+
+            'cur_stage': stage,
+            'cur_attribution_method': attribution_method,
             'cur_ordering_base': ordering_base,
             'cur_ordering_method': ordering_method,
+
+            'max_samples': max_samples,
+
             'summary_data': summary_data_std,
             'ordering_idc': tmp_ordering,
-            'data_splitters': proportion_for_image,
+
+            'data_lengths': proportion_for_image,
+            'data_lengths_scaled': proportion_for_image_scaled,
+
+            'interestingness': selected_interestingness_idc,
         }
    }
 
@@ -248,11 +267,14 @@ async def get_time_series_for_idc(file_name: str, body: dict, stage: str = ''):
     collected_data = m.parse_model_to_dict(data.get(stage))
     selected_data = collected_data['raw_data'][selected_idc]
 
-    start = body['start'] * selected_data.shape[1]
-    end = body['end'] * selected_data.shape[1]
+    start = body['start']
+    end = body['end']
+    if start < 1 and isinstance(start, float):
+        start = start * selected_data.shape[1]
+    if end < 1 and isinstance(end, float):
+        end = end * selected_data.shape[1]
 
     image = i.idc_to_image(selected_data, start, end)
-
     image_base64 = base64.b64encode(image.read())
     
     ret_tmp = {

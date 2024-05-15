@@ -91,6 +91,7 @@ function App() {
         height: null,
         data: null,
         dataset: null,
+        interestingness: null,
     });
 
     const [error, setError] = useState(null);
@@ -211,7 +212,9 @@ function App() {
                 const stages = data.meta.stages;
                 const attribution_methods = data.meta.attribution_methods;
                 const ordering_idc = data.meta.ordering_idc;
-                const data_splitters = data.meta.data_splitters;
+                const data_lengths = data.meta.data_lengths;
+                const data_lengths_scaled = data.meta.data_lengths_scaled;
+                const interestingness = data.meta.interestingness;
 
                 setParameters({
                     orderings: orderings,
@@ -235,8 +238,10 @@ function App() {
                     height: rect.height,
                     ordering_idc: ordering_idc,
                     start_end: start_end,
-                    data_splitters: data_splitters,
+                    data_lengths: data_lengths,
+                    data_lengths_scaled: data_lengths_scaled,
                     dataset: settings.dataset,
+                    interestingness: interestingness,
                 };
                 setInteractions(interactions);
 
@@ -254,15 +259,15 @@ function App() {
     }
 
     const steps = [
-        {
-            element: '.dense-pixel',
-            intro: 'Dense-Pixel Visualization with each pixel representing a certain value in the data.',
-            position: 'right',
-        },
-        {
-            element: '.parameters',
-            intro: 'Parameter Settings',
-        },
+        // {
+        //     element: '.dense-pixel',
+        //     intro: 'Dense-Pixel Visualization with each pixel representing a certain value in the data.',
+        //     position: 'right',
+        // },
+        // {
+        //     element: '.parameters',
+        //     intro: 'Parameter Settings',
+        // },
     ];
 
     const onExit = () => {

@@ -2,9 +2,25 @@ version: '3'
 
 name: davots
 services:
-    server:
+    frontend:
         build:
-            dockerfile: ./docker/Dockerfile
+            context: app/
+            dockerfile: ./../docker/Dockerfile-frontend
+        volumes:
+            - ./app/frontend:/app
+            - /app/node_modules/
         ports:
-            - 80:80
+            - 3000:3000
+
+    backend:
+        build:
+            context: app/
+            dockerfile: ./../docker/Dockerfile-backend
+        volumes:
+            - ./app/backend:/app
+            - /app/__pycache__/
+        ports:
+            - 8000:8000
+        environment:
+            PYTHONUNBUFFERED: 1
 
