@@ -80,38 +80,35 @@ class ResNet(nn.Module):
 
 
 class SimpleCNN(nn.Module):
-    def __init__(self):
+    def __init__(self, num_pred_classes: int = 2):
         super(SimpleCNN, self).__init__()
         
-        self.conv1 = nn.Sequential(
+        self.layers = nn.Sequential(
+            # conv1
             nn.Conv1d(1, 10, kernel_size=3, stride=1),
-            nn.ReLU(inplace=True)
-        )
-        self.conv2 = nn.Sequential(
+            nn.ReLU(),
+            # conv2
             nn.Conv1d(10, 50, kernel_size=3, stride=1),
             nn.MaxPool1d(3),
-            nn.ReLU(inplace=True)
-        )
-        self.conv3 = nn.Sequential(
+            nn.ReLU(),
+            # conv3
             nn.Conv1d(50, 100, kernel_size=3, stride=1),
             nn.MaxPool1d(3),
-            nn.ReLU(inplace=True)
+            nn.ReLU()
         )
         
         self.fc1 = nn.Sequential(
             nn.Linear(100 * 54, 100),
             nn.Dropout(0.5),
-            nn.ReLU(inplace=True)
+            nn.ReLU()
         )
         self.fc2 = nn.Sequential(
-            nn.Linear(100, 2),
+            nn.Linear(100, num_pred_classes),
             nn.Softmax(-1)
         )
         
     def forward(self, x):
-        x = self.conv1(x)
-        x = self.conv2(x)
-        x = self.conv3(x)
+        x = self.layers(x)
 
         batch_size = x.shape[0]
         x = x.view(batch_size, -1)
