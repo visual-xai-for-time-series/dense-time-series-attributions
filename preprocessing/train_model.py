@@ -4,6 +4,7 @@ import random
 
 import numpy as np
 import pandas as pd
+import argparse
 
 from tqdm import tqdm
 
@@ -25,7 +26,7 @@ np.random.seed(random_seed)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-from models import *
+from models import SimpleCNN, ResNet
 
 
 class TimeSeriesDataset(Dataset):
@@ -80,9 +81,9 @@ def validator(model, dataloader_test, criterion):
 
         running_loss += loss.item()
 
-    train_loss = running_loss / len(dataloader_train)
+    val_loss = running_loss / len(dataloader_test)
 
-    return train_loss
+    return val_loss
 
 
 def main():
@@ -178,7 +179,7 @@ def main():
     accuracy_ = np.round((preds.argmax(dim=-1) == labels.argmax(dim=-1)).int().sum().float().item() / len(preds), 4)
     print(f'Prediction Accuracy for Testing: {accuracy_}')
 
-    torch.save(model, f'./{model_type.lower()}-{dataset.lower()}.pt')
+    torch.save(model, f'./data/{model_type.lower()}-{dataset.lower()}.pt')
 
 
 if __name__ == '__main__':

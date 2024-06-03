@@ -12,3 +12,5 @@ torchvision==0.13.1
 frechetdist
 dtaidistance
 umap-learn
+tsfresh
+argparse
