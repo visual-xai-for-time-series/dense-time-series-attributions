@@ -26,6 +26,8 @@ import { D3Interaction } from './components/D3Interaction/D3Interaction';
 
 import Image from './components/Image/image';
 
+import WelcomeModal from './components/Helper/WelcomeModal';
+
 function App() {
     const parameter_height = 60;
 
@@ -102,6 +104,8 @@ function App() {
 
     const [stepsEnabled, setStepsEnabled] = useState(false);
 
+    const [showWelcomeModal, setShowWelcomeModal] = useState(true);
+
     const ref = useRef();
 
     let start_end = 300;
@@ -130,6 +134,22 @@ function App() {
             ...settings,
             ...new_settings,
         });
+    };
+
+    const setDataset = (dataset) => {
+        setSettings({
+            ...settings,
+            dataset: dataset,
+        }, () => {
+            changeUrlParam({
+                sample_idc: [0, start_end],
+                stage: parameters.cur_stage,
+                ordering_base: parameters.cur_ordering_base,
+                ordering_method: parameters.cur_ordering_method,
+                attribution_method: parameters.cur_attribution_method,
+            });
+        }
+        );
     };
 
     const changeUrlParam = (new_parameters) => {
@@ -276,6 +296,10 @@ function App() {
 
     return (
         <div className="App">
+            { showWelcomeModal && <WelcomeModal isOpen={showWelcomeModal} setShowWelcomeModal={setShowWelcomeModal} setDataset={setDataset} inputSettings={[
+                {title: "FordA", description: "Timeseries are really nice. Lots to see here.", image: "/images/forda.png", dataset: "cnn-forda"},
+                {title: "FordB", description: "This one is boring tbh.\n ", image: "/images/fordb.png", dataset: "cnn-fordb"},
+                ]} /> }
             <Steps enabled={stepsEnabled} steps={steps} initialStep={0} onExit={onExit} />
             <Grid container spacing={0}>
                 <Grid item xs={12} className="dense-pixel">

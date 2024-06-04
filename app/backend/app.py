@@ -136,8 +136,11 @@ async def serve_image(file_name: str, settings: Settings, start: int = 0, end: i
 
     print(selected_ordering)
 
-    interestingness_idc = interestingness.get(stage).get_interestingness(ordering_base, ordering_method, attribution_method)
-    print(interestingness_idc)
+    try:
+        interestingness_idc = interestingness.get(stage).get_interestingness(ordering_base, ordering_method, attribution_method)
+        print(interestingness_idc)
+    except AttributeError:
+        interestingness_idc = None
     selected_interestingness_idc = []
     if interestingness_idc:
         for idx in interestingness_idc:
