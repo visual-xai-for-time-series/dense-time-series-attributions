@@ -1,6 +1,7 @@
 #!/usr/bin/env python
-
+import os
 import random
+import argparse
 
 import numpy as np
 import pandas as pd
@@ -80,9 +81,9 @@ def validator(model, dataloader_test, criterion):
 
         running_loss += loss.item()
 
-    train_loss = running_loss / len(dataloader_train)
+    test_loss = running_loss / len(dataloader_test)
 
-    return train_loss
+    return test_loss
 
 
 def main():
@@ -94,17 +95,20 @@ def main():
     parser.add_argument('--model', '-m', type=str, required=True, 
                         choices=['cnn', 'resnet'], 
                         help='Specify the model type (choose from: cnn, resnet)')
+    parser.add_argument('--path', '-p', type=str, default='/data/', 
+                        help='Specify the path for the model data (default: /data/)')
     parser.add_argument('--epochs', type=int, default=500, 
                         help='Number of training epochs (default: 500)')
-
 
     # Parse the arguments
     args = parser.parse_args()
 
     dataset = args.dataset
     model_type = args.model
-
+    result_path = args.path
     epochs = args.epochs
+
+    print(f'Selected {dataset} and {model_type}')
 
     X_train, y_train = load_UCR_UEA_dataset(name=dataset, split='train', return_type='numpyflat')
     X_test, y_test = load_UCR_UEA_dataset(name=dataset, split='test', return_type='numpyflat')
@@ -178,7 +182,7 @@ def main():
     accuracy_ = np.round((preds.argmax(dim=-1) == labels.argmax(dim=-1)).int().sum().float().item() / len(preds), 4)
     print(f'Prediction Accuracy for Testing: {accuracy_}')
 
-    torch.save(model, f'./{model_type.lower()}-{dataset.lower()}.pt')
+    torch.save(model, os.path.join(result_path, f'{model_type.lower()}-{dataset.lower()}.pt'))
 
 
 if __name__ == '__main__':

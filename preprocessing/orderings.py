@@ -1,15 +1,14 @@
 from distance_functions import *
 
-### Sorting
 
+### Sorting
 
 def naive_sorting(data):
     data_for_sorting = data.copy()
 
     if len(data_for_sorting.shape) == 1:
         sort_ind = data_for_sorting.argsort(kind='mergesort')
-        dist_sort = neighborhood_dist(data_for_sorting[sort_ind])
-        return dist_sort, sort_ind
+        return 'Sorting', sort_ind
     
     col_len = data_for_sorting.shape[-1]
     for i in range(col_len):

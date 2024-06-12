@@ -72,3 +72,12 @@ def spearman(a, b):
 
 def cosine(a, b):
     return sp_cosine(a, b)
+
+
+def manhattan(a, b):
+    return np.sum(np.abs(a - b))
+
+
+def hellinger(p, q):
+    """ Hellinger distance between distributions """
+    return sum([(np.sqrt(t[0]) - np.sqrt(t[1])) * (np.sqrt(t[0]) - np.sqrt(t[1])) for t in zip(p,q)]) / np.sqrt(2.)

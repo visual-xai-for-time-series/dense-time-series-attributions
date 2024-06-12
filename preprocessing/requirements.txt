@@ -6,6 +6,7 @@ pandas==1.5.3
 scikit-learn==1.2.1
 scipy==1.10.0
 sktime==0.16.0
+
 torch==1.12.1
 torchvision==0.13.1
 
