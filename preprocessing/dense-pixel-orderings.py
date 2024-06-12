@@ -248,7 +248,8 @@ def main():
             print(f'Start with train')
 
             attributions_tmp = []
-            for x in dataloader_train_not_shuffled:
+            print("Length of train dataloader", len(dataloader_train_not_shuffled))
+            for i, x in enumerate(dataloader_train_not_shuffled):
                 input_, label_ = x
                 input_ = input_.reshape(input_.shape[0], 1, -1)
                 input_ = input_.float().to(device)
@@ -256,6 +257,8 @@ def main():
         
                 attribution = attribute_tec.attribute(input_.reshape(-1, *shape).float().to(device), target=torch.argmax(label_, axis=1))
                 attributions_tmp.extend(attribution)
+
+                print(f'Batch {i}')
         
             attributions_tmp = torch.stack(attributions_tmp)
             attributions['train'][at_name] = attributions_tmp.detach().cpu().reshape(-1, shape[-1]).numpy()
