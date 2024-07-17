@@ -2,17 +2,26 @@
 
 
 # Basic settings for the model
-models=("resnet" "cnn") # "cnn"
-datasets=("FordA" "FordB" "ECG5000") # "FordB" "ECG5000"
+models=("resnet" "cnn")
+# models=("resnet")
+datasets=("FordA" "FordB" "ECG5000")
+# datasets=("FordA")
 
 
-# Generate a timestamp
-timestamp=$(date +%Y%m%d-%H%M%S)
+# Check for parameters
+if [ -z "$1" ]; then
+    # Generate a timestamp
+    timestamp=$(date +%Y%m%d-%H%M%S)
+else
+    # Set a timestamp
+    timestamp=$1
+fi
 
 
 # Base path for the processed data
-path="./data_$timestamp/"
-mkdir "$path"
+path="./data-run-$timestamp"
+mkdir -p "$path"
+
 
 # Loop through models
 for model in "${models[@]}"; do
@@ -26,11 +35,8 @@ for model in "${models[@]}"; do
 
         echo "Looking for $model_lowercase-$dataset_lowercase.pt"
 
-        # Generate a timestamp
-        timestamp=$(date +%Y%m%d-%H%M%S)
-
         # Create a directory with the timestamp
-        directory="$path/result_$timestamp/"
+        directory="$path/results-for-$model_lowercase-$dataset_lowercase/"
         mkdir "$directory"
 
         # Check how large the files are and what is even in the subdirectories
@@ -45,7 +51,7 @@ for model in "${models[@]}"; do
         fi
 
         # Extract data from the model
-        python dense-pixel-orderings.py -d "$dataset" -m "$model" -rp "$directory"
+        python dense-pixel-orderings.py -d "$dataset" -m "$model" -mp "$directory" -rp "$directory"
 
         # Fix permissions to standard user
         if [ ! -z "$HOST_UID" ] && [ ! -z "$HOST_GID" ]; then

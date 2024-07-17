@@ -26,6 +26,7 @@ export function D3Interaction({ input_data, output_data, input_settings }) {
     const data_lengths_scaled = input_data.data_lengths_scaled;
 
     const dataset = input_data.dataset;
+    const stage = input_data.stage;
 
     const interestingness = input_data.interestingness;
 
@@ -62,9 +63,15 @@ export function D3Interaction({ input_data, output_data, input_settings }) {
         delete newData[key];
     };
 
+    const clearPercentilePlots = () => {
+        d3.select(svg_ref.current).selectAll('.tmp_brushers').remove();
+        setPercentilePlotsData({});
+    };
+
     const openPercentilePlot = (key) => {
         const selectedItem = percentilePlotsData[key];
         selectedItem['open'] = true;
+        selectedItem['open_toggle'] = true;
         const newData = { ...percentilePlotsData };
         newData[key] = selectedItem;
         setPercentilePlotsData(newData);
@@ -157,8 +164,9 @@ export function D3Interaction({ input_data, output_data, input_settings }) {
                     start: relative_pos_ration,
                     end: relative_pos_end_ration,
                     key: key,
-                    open: false,
+                    open: true,
                     dataset: dataset,
+                    stage: stage,
                 };
                 addToPercentilePlotsData(key, newPercentilePlotData);
 
@@ -234,114 +242,123 @@ export function D3Interaction({ input_data, output_data, input_settings }) {
                 const time_point_start = time_point - 15;
                 const time_point_end = time_point + 15;
 
-                brushListKey.current += 1;
-                const key = brushListKey.current;
+                const window_length = interestingness_window[0][1] - interestingness_window[0][0];
+                if (window_length > 25) {
+                    brushListKey.current += 1;
+                    const key = brushListKey.current;
 
-                const svg = d3.select(svg_ref.current);
+                    const svg = d3.select(svg_ref.current);
 
-                const idc = ordering_idc.slice(samples_start, samples_end);
-                console.log(ordering_idc.length);
-                console.log(idc);
+                    const idc = ordering_idc.slice(samples_start, samples_end);
 
-                const newPercentilePlotData = {
-                    idc: idc,
-                    start: Math.max(0, time_point_start),
-                    end: Math.min(data_lengths[0], time_point_end),
-                    key: key,
-                    open: false,
-                    dataset: dataset,
-                };
-                addToPercentilePlotsData(key, newPercentilePlotData);
+                    console.log(
+                        `Key: ${key}\nWindow length: ${window_length}\nTime point: ${time_point}\nIdc: ${idc}`
+                    );
 
-                const start_x = svg
-                    .selectAll('.sample-row')
-                    .nodes()
-                    .filter(function (d) {
-                        if (d3.select(d).attr('data-idx') == idc[0]) {
-                            return true;
+                    const newPercentilePlotData = {
+                        idc: idc,
+                        start: Math.max(0, time_point_start),
+                        end: Math.min(data_lengths[0], time_point_end),
+                        key: key,
+                        open: false,
+                        dataset: dataset,
+                        stage: stage,
+                    };
+                    addToPercentilePlotsData(key, newPercentilePlotData);
+
+                    const start_x = svg
+                        .selectAll('.sample-row')
+                        .nodes()
+                        .filter(function (d) {
+                            if (d3.select(d).attr('data-idx') == idc[0]) {
+                                return true;
+                            }
+                            // const x = d3.select(this).attr('x');
+                            return false;
+                        })
+                        .map(function (d) {
+                            return d3.select(d).attr('x');
+                        });
+
+                    console.log(start_x);
+
+                    const end_x = svg
+                        .selectAll('.sample-row')
+                        .nodes()
+                        .filter(function (d) {
+                            if (d3.select(d).attr('data-idx') == idc[idc.length - 1]) {
+                                return true;
+                            }
+                            // const x = d3.select(this).attr('x');
+                            return false;
+                        })
+                        .map(function (d) {
+                            return d3.select(d).attr('x');
+                        });
+
+                    console.log(start_x);
+                    console.log(end_x);
+
+                    const start = svg
+                        .selectAll('.sample-row')
+                        .filter(function () {
+                            const x = d3.select(this).attr('x');
+                            return samples_start < x && x < samples_end;
+                        })
+                        .nodes()
+                        .map(function (d) {
+                            return d3.select(d).attr('data-idx');
+                        });
+                    console.log(start);
+
+                    let margin = 0;
+                    data_lengths_scaled.forEach((element, idx) => {
+                        if (true) {
+                            const start_y =
+                                margin + (time_point_start / data_lengths[idx]) * element;
+                            const end_y = margin + (time_point_end / data_lengths[idx]) * element;
+
+                            console.log('-------------------');
+                            console.log(start_y + ' - ' + end_y);
+                            console.log(start_x + ' - ' + end_x);
+                            console.log('-------------------');
+
+                            //         // selected !== idx
+                            let rect_color = 'rgba(255, 165, 0, 0.3)';
+
+                            let borderColor = 'rgba(255, 255, 255, 0.8)';
+                            let borderWidth = 1;
+
+                            //         let rectWidth = x_2 - x_1;
+                            //         let rectHeight =
+                            //             ((y_2 - y_1) * data_splitters[idx]) / data_splitters[selected];
+                            //         let rectX = x_1;
+                            //         let rectY = margin + relative_pos_ration * element;
+
+                            svg.append('rect')
+                                .attr('class', 'tmp_brushers')
+                                .attr('data-key', key)
+                                .attr('x', start_x)
+                                .attr('y', start_y)
+                                .attr('width', end_x - start_x)
+                                .attr('height', end_y - start_y)
+                                .attr('fill', rect_color)
+                                .attr('stroke', borderColor)
+                                .attr('stroke-width', borderWidth)
+                                .on('click', () => {
+                                    openPercentilePlot(key);
+                                });
+
+                            svg.append('text')
+                                .attr('class', 'tmp_brushers')
+                                .attr('data-key', key)
+                                .attr('x', end_x - 20)
+                                .attr('y', start_y + 15)
+                                .text('' + key);
                         }
-                        // const x = d3.select(this).attr('x');
-                        return false;
-                    })
-                    .map(function (d) {
-                        return d3.select(d).attr('x');
+                        margin += element;
                     });
-
-                const end_x = svg
-                    .selectAll('.sample-row')
-                    .nodes()
-                    .filter(function (d) {
-                        if (d3.select(d).attr('data-idx') == idc[idc.length - 1]) {
-                            return true;
-                        }
-                        // const x = d3.select(this).attr('x');
-                        return false;
-                    })
-                    .map(function (d) {
-                        return d3.select(d).attr('x');
-                    });
-
-                console.log(start_x);
-                console.log(end_x);
-
-                const start = svg
-                    .selectAll('.sample-row')
-                    .filter(function () {
-                        const x = d3.select(this).attr('x');
-                        return samples_start < x && x < samples_end;
-                    })
-                    .nodes()
-                    .map(function (d) {
-                        return d3.select(d).attr('data-idx');
-                    });
-                console.log(start);
-
-                let margin = 0;
-                data_lengths_scaled.forEach((element, idx) => {
-                    if (true) {
-                        const start_y = margin + (time_point_start / data_lengths[idx]) * element;
-                        const end_y = margin + (time_point_end / data_lengths[idx]) * element;
-
-                        console.log('-------------------');
-                        console.log(start_y + ' - ' + end_y);
-                        console.log(start_x + ' - ' + end_x);
-                        console.log('-------------------');
-
-                        //         // selected !== idx
-                        let rect_color = 'rgba(255, 165, 0, 0.3)';
-
-                        let borderColor = 'rgba(255, 255, 255, 0.8)';
-                        let borderWidth = 1;
-
-                        //         let rectWidth = x_2 - x_1;
-                        //         let rectHeight =
-                        //             ((y_2 - y_1) * data_splitters[idx]) / data_splitters[selected];
-                        //         let rectX = x_1;
-                        //         let rectY = margin + relative_pos_ration * element;
-
-                        svg.append('rect')
-                            .attr('class', 'tmp_brushers')
-                            .attr('data-key', key)
-                            .attr('x', start_x)
-                            .attr('y', start_y)
-                            .attr('width', end_x - start_x)
-                            .attr('height', end_y - start_y)
-                            .attr('fill', rect_color)
-                            .attr('stroke', borderColor)
-                            .attr('stroke-width', borderWidth)
-                            .on('click', () => {
-                                openPercentilePlot(key);
-                            });
-
-                        //         svg.append('text')
-                        //             .attr('class', 'tmp_brushers')
-                        //             .attr('data-key', key)
-                        //             .attr('x', x_2 - 20)
-                        //             .attr('y', rectY + 15)
-                        //             .text('' + key);
-                    }
-                    margin += element;
-                });
+                }
             });
         }
     }, [interestingness]); // eslint-disable-line react-hooks/exhaustive-deps

@@ -2,7 +2,10 @@ import time
 import traceback
 
 from scipy.stats import entropy
-from scipy.signal import convolve2d, convolve
+from scipy.signal import convolve2d
+from scipy.ndimage import convolve
+
+from logger import logger
 
 from distance_functions import *
 
@@ -108,39 +111,39 @@ def calculate_scores(data):
         neighborhood_score = neighborhood_dist(data)
     except Exception as e:
         traceback_str = traceback.format_exc()
-        print(f'Exception: {e}')
-        print(traceback_str)
-        print(f'Problem with: {data}')
+        logger.info(f'[E] Exception: {e}')
+        logger.info(traceback_str)
+        logger.info(f'Problem with: {data}')
         neighborhood_score = None
     end_time = time.process_time()
     rounded_time = np.round(end_time - start_time, 10)
-    print(f'Time needed {rounded_time} seconds for neighboorhood measure')
+    logger.info(f'Time needed {rounded_time} seconds for neighboorhood measure')
 
     start_time = time.process_time()
     try:
         convolution_score = baseline_convolution(data)
     except Exception as e:
         traceback_str = traceback.format_exc()
-        print(f'Exception: {e}')
-        print(traceback_str)
-        print(f'Problem with: {data}')
+        logger.info(f'[E] Exception: {e}')
+        logger.info(traceback_str)
+        logger.info(f'Problem with: {data}')
         convolution_score = None
     end_time = time.process_time()
     rounded_time = np.round(end_time - start_time, 10)
-    print(f'Time needed {rounded_time} seconds for convolution measure')
+    logger.info(f'Time needed {rounded_time} seconds for convolution measure')
 
     start_time = time.process_time()
     try:
         entropy_score = baseline_entropy(data)
     except Exception as e:
         traceback_str = traceback.format_exc()
-        print(f'Exception: {e}')
-        print(traceback_str)
-        print(f'Problem with: {data}')
+        logger.info(f'[E] Exception: {e}')
+        logger.info(traceback_str)
+        logger.info(f'Problem with: {data}')
         entropy_score = None
     end_time = time.process_time()
     rounded_time = np.round(end_time - start_time, 10)
-    print(f'Time needed {rounded_time} seconds for entropy measure')
+    logger.info(f'Time needed {rounded_time} seconds for entropy measure')
 
     return neighborhood_score, convolution_score, entropy_score
 
@@ -148,17 +151,23 @@ def calculate_scores(data):
 ################################################################################
 
 
-def only_quantiles(data, axis=1, quant_range=0.1, fill=None):
+def only_quantiles(data, axis=1, quant_range=0.1, fill=None, only_upper=False):
     def quant(data):
         lower_bound = np.quantile(data, quant_range)
         upper_bound = np.quantile(data, 1 - quant_range)
 
         filler = fill
         if filler is None:
-            filler = (np.max(data) - np.min(data)) / 2
+            if only_upper:
+                filler = upper_bound
+            else:
+                filler = (np.max(data) - np.min(data)) / 2
 
         data_new = np.copy(data)
-        data_new[(data_new > lower_bound) & (upper_bound > data_new)] = filler
+        if only_upper:
+            data_new[data_new < upper_bound] = filler
+        else:
+            data_new[(data_new > lower_bound) & (upper_bound > data_new)] = filler
 
         return data_new
 
@@ -183,87 +192,153 @@ def norm(data, axis=1):
         return np.apply_along_axis(minmax_norm, axis, data)
 
 
+def flip(data):
+    mean = np.mean(data)
+    return np.abs(data - mean) + mean
+
+
+def gaussian_kernel(size: int, sigma: float) -> np.ndarray:
+    """
+    Generates a 2D Gaussian kernel.
+    
+    Parameters:
+    size (int): The size of the kernel (must be an odd number).
+    sigma (float): The standard deviation of the Gaussian.
+    
+    Returns:
+    np.ndarray: 2D Gaussian kernel.
+    """
+    # Ensure the size is odd to have a center
+    if size % 2 == 0:
+        raise ValueError("Size must be an odd number.")
+
+    # Create an (size x size) grid of (x, y) coordinates
+    ax = np.arange(-size // 2 + 1, size // 2 + 1)
+    xx, yy = np.meshgrid(ax, ax)
+
+    # Calculate the Gaussian function
+    kernel = np.exp(-(xx**2 + yy**2) / (2 * sigma**2))
+
+    # Normalize the kernel to make the sum of all elements equal to 1
+    kernel = kernel / np.sum(kernel)
+
+    return kernel.round(3)
+
+
+def convolution_binarize(data, neighboorhoodsize=None):
+    t = data.copy()
+    t -= np.mean(t)
+
+    if neighboorhoodsize == None:
+        neighboorhoodsize = int(t.shape[-1] * 0.02)
+
+    if neighboorhoodsize % 2 == 0:
+        neighboorhoodsize += 1
+    
+    # n = neighboorhoodsize
+
+    # kernel = np.zeros((n, n))
+
+    # kernel[:,:] = 1
+    # middle_row = n // 2
+    # middle_column = n // 2
+    # kernel[:, middle_column] = n
+    # for i in range(1, int(n // 2)):
+    #     kernel[:, middle_column + i] = 2 * n // 4 - i
+    #     kernel[:, middle_column - i] = 2 * n // 4 - i
+    # kernel[middle_row, middle_column] = n * 2 # n * n / 2
+    # kernel /= kernel.sum()
+
+    # smoothed_data = convolve2d(t, kernel, mode='full', boundary='symm')
+
+    sigma = neighboorhoodsize // 4
+    kernel = gaussian_kernel(neighboorhoodsize, sigma)
+
+    smoothed_data = convolve(t, kernel, mode='constant', cval=0.0)
+
+    salient_data = only_quantiles(smoothed_data, quant_range=0.005, fill=0, only_upper=True)
+    salient_data[salient_data > 0] = 1
+
+    return salient_data
+
+
 def combine_elements_with_range(array, range_val=1):
-    differences = np.diff(array)
-    group_boundaries = np.where(differences > range_val)[0]
-    group_boundaries_end = np.append(group_boundaries, len(array) - 1)
-    group_boundaries_start = np.append(0, group_boundaries + 1)
+    if len(array) < 1:
+        return []
+
+    if array[0] > 0:
+        array = np.concatenate(([0], array))
+        differences = np.diff(array)
+        group_boundaries = np.where(differences > range_val)[0]
+        group_boundaries_end =  np.concatenate((group_boundaries[1:], [len(array) - 1]))
+        group_boundaries_start = group_boundaries
+    else:
+        differences = np.diff(array)
+        group_boundaries = np.where(differences > range_val)[0]
+        group_boundaries_end =  np.append(group_boundaries, len(array) - 1)
+        group_boundaries_start = np.append(0, group_boundaries + 1)
+
     combined_elements_end = array[group_boundaries_end]
     combined_elements_start = array[group_boundaries_start]
+
     return np.array(list(zip(combined_elements_start, combined_elements_end)))
+
+
+def combine_elements_with_range_new(arr, min_range=10):
+    if len(arr) < 1:
+        return []
+    
+    if arr[0] > 0:
+        arr = np.concatenate(([0], arr))
+    
+    diff = np.diff(arr)
+
+    subsequences = []
+    for i, x in enumerate(diff):
+        if x > min_range:
+            subsequences.append([arr[i], arr[i + 1]])
+
+    return subsequences 
 
 
 ################################################################################
 
 
-def interestingness_measure(data, neighborhood=10, dist_fn=wasserstein, lower_bound_value=0.1, upper_bound_value=0.9):
-    def quant(data):
-        data_tmp = data.copy()
-        max_ = np.max(data_tmp)
-        min_ = np.min(data_tmp)
+def interestingness_measure(data, neighborhood=10, dist_fn=hellinger, bound_value=0.05):
+    
+    norm_data = norm(data)
+    quant_data = only_quantiles(norm_data, quant_range=bound_value)
+    flipped_data = flip(quant_data)
 
-        lower_bound = np.quantile(data_tmp, lower_bound_value)
-        upper_bound = np.quantile(data_tmp, upper_bound_value)
+    binarized_data = convolution_binarize(flipped_data, neighborhood)
 
-        data_tmp[(data_tmp > lower_bound) & (upper_bound > data_tmp)] = (max_ - min_) / 2
-        return data_tmp
+    interestingness = []
+    for i in range(len(binarized_data) - 1):
+        dst = 0
+        for j in range(1, 3):
+            low_idx = i - j
+            high_idx = i + j
+            if low_idx > -1:
+                dst += dist_fn(binarized_data[i], binarized_data[low_idx])
+            if high_idx < len(binarized_data):
+                dst += dist_fn(binarized_data[i], binarized_data[high_idx])
+        interestingness.append(dst)
+    interestingness = np.array(interestingness)
 
-    tmp_data = data.copy()
-    focused_data = np.apply_along_axis(quant, 1, tmp_data)
-
-    n, _ = focused_data.shape
-    interestingness = np.zeros((n, ), dtype=float)
-
-    dist = np.empty((n, n), dtype=float)
-    dist[:] = np.nan
-    for i in range(n):
-        tmp_sum = 0
-        for j in range(-neighborhood, neighborhood):
-            j += i
-            if j >= n: continue
-            if j < 0: continue
-            if np.isnan(dist[i,j]):
-                dist[i,j] = dist_fn(focused_data[i], focused_data[j])
-            tmp_sum += dist[i,j]
-        interestingness[i] = tmp_sum / (neighborhood * 2)
-
-    return interestingness
+    return interestingness, binarized_data
 
 
-def data_to_interestingness_idx(data, interestingness, neighborhood_size=10, quantile_threshold=0.1):
+def data_to_interestingness_idx(data, interestingness, neighborhood_size=20, quantile_threshold=0.9):
+    
     threshold = np.quantile(interestingness, quantile_threshold)
     x = np.arange(0, interestingness.shape[0])
-    candidates = x[interestingness < threshold]
-    if len(candidates) < 1:
-        return []
-    candidates = combine_elements_with_range(candidates, neighborhood_size)
+    candidates = x[interestingness > threshold]
 
-    data_for_interestingness = data.copy()
-    focused_data = norm(data_for_interestingness)
-    focused_data = only_quantiles(focused_data)
+    candidates_bounds = combine_elements_with_range_new(candidates, neighborhood_size)
 
     interesting_sequences = []
-    for start_idx, end_idx in candidates:
-        if end_idx - start_idx < neighborhood_size:
-            continue
-
-        focused_subsequence = focused_data[start_idx:end_idx]
-
-        kernel = np.zeros((neighborhood_size, neighborhood_size))
-        kernel[:,:] = 1
-        middle_row = neighborhood_size // 2
-        middle_column = neighborhood_size // 2
-        kernel[:, middle_column] = neighborhood_size
-        kernel[middle_row, middle_column] = neighborhood_size * neighborhood_size
-        kernel /= kernel.sum()
-
-        cleaned_data = convolve2d(focused_subsequence, kernel, mode='full', boundary='symm')
-        cleaned_data = only_quantiles(cleaned_data, quant_range=0.01)
-
-        norm_data = norm(cleaned_data)
-        norm_data_sum = np.sum(norm_data, axis=0)
-        idx = np.argmax(norm_data_sum)
-    
-        interesting_sequences.append([[start_idx, end_idx], idx])
+    for start_idx, end_idx in candidates_bounds:
+        candidates_idx = np.argmax(np.sum(data[start_idx:end_idx], axis=0))
+        interesting_sequences.append([[start_idx, end_idx], candidates_idx])
 
     return interesting_sequences

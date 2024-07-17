@@ -80,8 +80,12 @@ class Settings(BaseModel):
     predictions_colormap: str = 'viridis'
 
 
+@app.post('/api/getPixelImage')
 @app.post('/api/getPixelImage/{file_name}')
-async def serve_image(file_name: str, settings: Settings, start: int = 0, end: int = -1, stage: str = '', ordering_base: str = '', ordering_method: str = '', attribution_method: str = ''):
+async def serve_image(settings: Settings, file_name: str = '', start: int = 0, end: int = -1, stage: str = '', ordering_base: str = '', ordering_method: str = '', attribution_method: str = ''):
+    if file_name == '':
+        file_name = list(cache.keys())[0]
+    
     resolution_width = settings.resolution_width
     resolution_height = settings.resolution_height
 
@@ -91,8 +95,13 @@ async def serve_image(file_name: str, settings: Settings, start: int = 0, end: i
     data_to_show = []
     for k in settings_dict.keys():
         if settings_dict[k] == True:
-            data_to_show.append(k)
+            if 'labels' in k:
+                data_to_show.append('labels')
+                data_to_show.append('predictions')
+            else:
+                data_to_show.append(k)
     
+    print(data_to_show)
     print(settings)
     
     loaded_data = load_file(file_name)
@@ -113,7 +122,7 @@ async def serve_image(file_name: str, settings: Settings, start: int = 0, end: i
     if attribution_method == '':
         attribution_method, _ = data.get(stage).get_default_attribution()
 
-    print(start, end, stage, attribution_method, ordering_base, ordering_method)
+    print(f'Dataset: {file_name}, Interval: [{start}, {end}], Stage: {stage}, Method: {attribution_method}, Ordering: [{ordering_base}, {ordering_method}]')
 
     collected_data = m.parse_model_to_dict(data.get(stage))
     collected_data['attributions_histogram'] = collected_data['attributions'][f'{attribution_method}_histogram']
@@ -125,7 +134,6 @@ async def serve_image(file_name: str, settings: Settings, start: int = 0, end: i
     orderings_defaults['None'] = ['None']
 
     selected_ordering = orderings.get(stage).get_orderings(ordering_base, ordering_method, attribution_method)
-    print(selected_ordering)
     stages = data.get_set()
     attribution_methods = data.get(stage).get_attributions()
 
@@ -134,27 +142,27 @@ async def serve_image(file_name: str, settings: Settings, start: int = 0, end: i
     else:
         ordering = selected_ordering['ordering']
 
-    print(selected_ordering)
+    print(f'Selected Ordering: {ordering}')
 
     interestingness_idc = interestingness.get(stage).get_interestingness(ordering_base, ordering_method, attribution_method)
-    print(interestingness_idc)
     selected_interestingness_idc = []
     if interestingness_idc:
         for idx in interestingness_idc:
-            if start < idx[0][0] and idx[0][1] < end:
+            if start <= idx[0][0] and idx[0][1] <= end:
                 selected_interestingness_idc.append(idx)
-    print(selected_interestingness_idc)
 
     # slice to start and end and calculate width
     ret_tmp = {}
     max_samples = 0
-    tmp_ordering = ordering[start:end]
+    sliced_ordering = ordering[start:end]
 
     for k in collected_data:
+        print(k)
         max_samples = max(max_samples, len(collected_data[k]))
-        ret_tmp[k] = collected_data[k][tmp_ordering].tolist()
-    tmp_ordering = tmp_ordering.tolist()
+        ret_tmp[k] = collected_data[k][sliced_ordering].tolist()
+    sliced_ordering = sliced_ordering.tolist()
 
+    # summary data for the slider selector
     summary_data_std = {}
     for k in collected_data.keys():
         tmp_data = collected_data[k][ordering]
@@ -176,23 +184,30 @@ async def serve_image(file_name: str, settings: Settings, start: int = 0, end: i
         ['activations_histogram', 'Sqrt', settings.activations_histogram_colormap, False],
         ['attributions', 'MinMax', settings.attributions_colormap, True],
         ['attributions_histogram', 'Sqrt', settings.attributions_histogram_colormap, False],
-        ['labels_pred', 'MinMax', settings.predictions_colormap, False]
+        ['labels', 'MinMax', settings.predictions_colormap, False],
+        ['predictions', 'MinMax', settings.predictions_colormap, False]
     ]
 
-    proportion_for_image = []
-
     data_for_image = []
+    proportion_for_image = []
+    
+    print(ret_tmp.keys())
+
     for k in data_generation:
         k, norm, cmap, quant = k
+        print(k)
         if k in ret_tmp and k in data_to_show:
+            print(k)
             d = np.array(ret_tmp[k])
             # d = i.discretizer(d)
             d = i.normalize(d, norm)
             if quant:
                 d = i.only_quantiles(d)
             d = i.data_to_color(d, cmap)
-            proportion_for_image.append(d.shape[1])
+
             data_for_image.append(d)
+            if d.shape[1] > 10:
+                proportion_for_image.append(d.shape[1])
 
     proportion_sum = sum(proportion_for_image)
     if layout == 'horizontal':
@@ -218,7 +233,7 @@ async def serve_image(file_name: str, settings: Settings, start: int = 0, end: i
             'max_samples': max_samples,
 
             'summary_data': summary_data_std,
-            'ordering_idc': tmp_ordering,
+            'ordering_idc': sliced_ordering,
 
             'data_lengths': proportion_for_image,
             'data_lengths_scaled': proportion_for_image_scaled,
@@ -245,8 +260,12 @@ async def get_available_datasets():
     return JSONResponse(content=list(cache.keys()))
 
 
+@app.post('/api/getTimeSeriesForIdc')
 @app.post('/api/getTimeSeriesForIdc/{file_name}')
-async def get_time_series_for_idc(file_name: str, body: dict, stage: str = ''):
+async def get_time_series_for_idc(body: dict, file_name: str = '', stage: str = ''):
+
+    if file_name == '':
+        file_name = list(cache.keys())[0]
 
     if 'idc' not in body:
         return 200

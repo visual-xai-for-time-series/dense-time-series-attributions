@@ -17,6 +17,8 @@ from sklearn.preprocessing import OneHotEncoder
 
 from sktime.datasets import load_UCR_UEA_dataset
 
+from logger import logger
+
 
 random_seed = 13
 
@@ -108,12 +110,12 @@ def main():
     result_path = args.path
     epochs = args.epochs
 
-    print(f'Selected {dataset} and {model_type}')
+    logger.info(f'Selected {dataset} and {model_type}')
 
     X_train, y_train = load_UCR_UEA_dataset(name=dataset, split='train', return_type='numpyflat')
     X_test, y_test = load_UCR_UEA_dataset(name=dataset, split='test', return_type='numpyflat')
 
-    print(f'Length training data: {len(X_train)} labels: {len(y_train)} test data: {len(X_test)} labels: {len(y_test)}')
+    logger.info(f'Length training data: {len(X_train)} labels: {len(y_train)} test data: {len(X_test)} labels: {len(y_test)}')
 
     encoder = OneHotEncoder(categories='auto', sparse_output=False)
 
@@ -142,8 +144,9 @@ def main():
     for epoch in range(epochs):
         train_loss = trainer(model, dataloader_train, loss, optimizer)
         if epoch % 100 == 0:
-            print('Val', validator(model, dataloader_test, loss))
-    #     print('Train', train_loss)
+            val = validator(model, dataloader_test, loss)
+            logger.info(f'Validation loss: {val}')
+    #     logger.info('Train', train_loss)
 
 
     model.eval()
@@ -163,7 +166,7 @@ def main():
     preds = torch.stack(preds)
     labels = torch.stack(labels)
     accuracy_ = np.round((preds.argmax(dim=-1) == labels.argmax(dim=-1)).int().sum().float().item() / len(preds), 4)
-    print(f'Prediction Accuracy for Training: {accuracy_}')
+    logger.info(f'Prediction Accuracy for Training: {accuracy_}')
 
     preds = []
     labels = []
@@ -180,7 +183,7 @@ def main():
     preds = torch.stack(preds)
     labels = torch.stack(labels)
     accuracy_ = np.round((preds.argmax(dim=-1) == labels.argmax(dim=-1)).int().sum().float().item() / len(preds), 4)
-    print(f'Prediction Accuracy for Testing: {accuracy_}')
+    logger.info(f'Prediction Accuracy for Testing: {accuracy_}')
 
     torch.save(model, os.path.join(result_path, f'{model_type.lower()}-{dataset.lower()}.pt'))
 

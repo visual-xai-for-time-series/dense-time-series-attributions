@@ -5,6 +5,8 @@ import time
 
 import numpy as np
 
+import torch.nn as nn
+
 from orderings import * 
 from measures import *
 
@@ -151,4 +153,37 @@ def save_savepoint(data, file_path):
         with open(file_path, 'wb') as file:
             dill.dump(data, file)
         return True
+
+
+def get_possible_layers(model):
+    possible_layers = []
+    for layer in model.children():
+        if isinstance(layer, (nn.Linear, nn.Conv1d, nn.Conv2d, nn.ConvTranspose2d)):
+            possible_layers.append(layer)
+        elif isinstance(layer, nn.Sequential):
+            possible_layers.extend(get_possible_layers(layer))
+        elif isinstance(layer, nn.Module):
+            possible_layers.extend(get_possible_layers(layer))
+    return possible_layers
+
+
+######## Helper Functions
+
+
+def str_to_key(in_str):
+    return in_str.lower().replace(' ', '_')
+
+
+def flatten(data):
+    result = []
+    for item in data:
+        if isinstance(item, list):
+            result.extend(flatten(item))
+        elif isinstance(item, tuple):
+            result.extend(flatten(item))
+        elif isinstance(item, np.ndarray):
+            result.extend(item.flatten().tolist())
+        else:
+            result.append(item)
+    return result
 

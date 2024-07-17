@@ -14,6 +14,7 @@ import Select from '@mui/material/Select';
 import Button from '@mui/material/Button';
 
 import ModelTraining from '@mui/icons-material/ModelTraining';
+import HighlightOff from '@mui/icons-material/HighlightOff';
 
 import { D3Slider } from '../D3Slider/D3Slider';
 import { Settings } from '../Helper/Settings';
@@ -128,7 +129,7 @@ export function Parameters({ input_data, output_data, input_settings, output_set
             alignItems="center"
             justifyContent="center"
         >
-            <Grid item xs={6}>
+            <Grid item xs={5}>
                 <Item>
                     <D3Slider
                         input_data={slider_parameters}
@@ -136,7 +137,7 @@ export function Parameters({ input_data, output_data, input_settings, output_set
                     ></D3Slider>
                 </Item>
             </Grid>
-            <Grid item xs={6}>
+            <Grid item xs={7}>
                 <Item>
                     <Grid
                         container
@@ -243,7 +244,7 @@ export function Parameters({ input_data, output_data, input_settings, output_set
                                 </FormControl>
                             </Item>
                         </Grid>
-                        <Grid item xs={3}>
+                        <Grid item xs={2}>
                             <Item>
                                 <FormControl
                                     sx={{
@@ -289,6 +290,13 @@ export function Parameters({ input_data, output_data, input_settings, output_set
                                     input_settings={input_settings}
                                     output_settings={output_settings}
                                 ></Settings>
+                            </Item>
+                        </Grid>
+                        <Grid item xs={1}>
+                            <Item>
+                                <Button onClick={handleButton} variant="contained">
+                                    <HighlightOff />
+                                </Button>
                             </Item>
                         </Grid>
                     </Grid>

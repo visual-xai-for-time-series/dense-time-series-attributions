@@ -20,6 +20,8 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import Paper from '@mui/material/Paper';
 import Draggable from 'react-draggable';
 
+import CircularProgress from '@mui/material/CircularProgress';
+
 // function PaperComponent(props) {
 //     return <Paper {...props} />;
 // }
@@ -28,8 +30,6 @@ export function PercentilePlot({ input_data, output_data }) {
     const [img_data, setImgData] = useState(null);
     const [open, setOpen] = useState(false);
 
-    console.log(input_data);
-
     const idc = input_data.idc;
     const start = input_data.start;
     const end = input_data.end;
@@ -37,12 +37,13 @@ export function PercentilePlot({ input_data, output_data }) {
 
     const key = input_data.key;
     const dataset = input_data.dataset;
+    const stage = input_data.stage;
 
     const base_url = process.env.REACT_APP_API_URL ? process.env.REACT_APP_API_URL : '';
 
     useEffect(() => {
         if (idc.length > 0) {
-            const url = base_url + '/api/getTimeSeriesForIdc/' + dataset;
+            const url = base_url + '/api/getTimeSeriesForIdc/' + dataset + '?stage=' + stage;
 
             d3.json(url, {
                 method: 'POST',
@@ -55,15 +56,13 @@ export function PercentilePlot({ input_data, output_data }) {
                     'Content-type': 'application/json; charset=UTF-8',
                 },
             }).then((data) => {
-                console.log(data);
                 setImgData(data.image);
-                setOpen(true);
+                if (open_toggle) setOpen(true);
             });
         }
     }, [idc]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
-        console.log(open_toggle);
         setOpen(open_toggle);
     }, [open_toggle]);
 
@@ -109,11 +108,16 @@ export function PercentilePlot({ input_data, output_data }) {
                         </div>
                     </DialogTitle>
                     <DialogContent>
-                        <img
-                            src={`data:image/jpeg;base64,${img_data}`}
-                            alt="secret"
-                            style={{ maxWidth: '100%', maxHeight: '100%' }}
-                        />
+                        {img_data ? (
+                            <img
+                                src={`data:image/jpeg;base64,${img_data}`}
+                                alt="secret"
+                                style={{ maxWidth: '100%', maxHeight: '100%' }}
+                            />
+                        ) : (
+                            // <LoadingSpinner />
+                            <CircularProgress />
+                        )}
                         <Accordion>
                             <AccordionSummary
                                 expandIcon={<ExpandMoreIcon />}

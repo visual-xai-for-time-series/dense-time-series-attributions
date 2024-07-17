@@ -36,8 +36,8 @@ function App() {
         parameter_height -
         10;
 
-    let start_layout = 'horizontal';
-    let start_dataset = 'cnn-forda';
+    const start_layout = 'horizontal';
+    const start_dataset = '';
 
     let reloader = false;
 
@@ -91,6 +91,7 @@ function App() {
         height: null,
         data: null,
         dataset: null,
+        stage: null,
         interestingness: null,
     });
 
@@ -241,6 +242,7 @@ function App() {
                     data_lengths: data_lengths,
                     data_lengths_scaled: data_lengths_scaled,
                     dataset: settings.dataset,
+                    stage: cur_stage,
                     interestingness: interestingness,
                 };
                 setInteractions(interactions);

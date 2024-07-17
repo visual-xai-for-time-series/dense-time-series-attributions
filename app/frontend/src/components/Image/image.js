@@ -1,5 +1,7 @@
 import React, { forwardRef, useEffect, useState } from 'react';
 
+import CircularProgress from '@mui/material/CircularProgress';
+
 import './image.css';
 
 const Image = forwardRef(function Image({ data, meta }, ref) {
@@ -16,7 +18,11 @@ const Image = forwardRef(function Image({ data, meta }, ref) {
 
     return (
         <div className="image" style={{ width: meta.width, height: meta.height }} ref={ref}>
-            <img src={`data:image/jpeg;base64,${img_data}`} alt="secret" />
+            {img_data ? (
+                <img src={`data:image/jpeg;base64,${img_data}`} alt="secret" />
+            ) : (
+                <CircularProgress />
+            )}
         </div>
     );
 });
