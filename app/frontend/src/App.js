@@ -95,6 +95,8 @@ function App() {
         interestingness: null,
     });
 
+    const [clean, setClean] = useState('');
+
     const [error, setError] = useState(null);
 
     const [img_data, setImageData] = useState(null);
@@ -287,6 +289,7 @@ function App() {
                             input_data={interactions}
                             output_data={labelElement}
                             input_settings={settings}
+                            clean={clean}
                         ></D3Interaction>
                     </Item>
                 </Grid>
@@ -296,6 +299,7 @@ function App() {
                     output_data={changeUrlParam}
                     input_settings={settings}
                     output_settings={changeSettings}
+                    clean={setClean}
                 ></Parameters>
             </Grid>
             <Box

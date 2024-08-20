@@ -21,7 +21,7 @@ import { Settings } from '../Helper/Settings';
 
 import { capitalize } from '../Helper/Helper';
 
-export function Parameters({ input_data, output_data, input_settings, output_settings }) {
+export function Parameters({ input_data, output_data, input_settings, output_settings, clean }) {
     const orderings = Object.keys(input_data.orderings);
     const ordering_methods = input_data.orderings;
     const stages = input_data.stages;
@@ -119,6 +119,13 @@ export function Parameters({ input_data, output_data, input_settings, output_set
             attribution_method: attribution_method,
         };
         output_data(new_parameters);
+    };
+
+    let k = 1;
+
+    const cleanButton = (_) => {
+        k += 1;
+        clean(k.toString());
     };
 
     return (
@@ -294,7 +301,7 @@ export function Parameters({ input_data, output_data, input_settings, output_set
                         </Grid>
                         <Grid item xs={1}>
                             <Item>
-                                <Button onClick={handleButton} variant="contained">
+                                <Button onClick={cleanButton} variant="contained">
                                     <HighlightOff />
                                 </Button>
                             </Item>

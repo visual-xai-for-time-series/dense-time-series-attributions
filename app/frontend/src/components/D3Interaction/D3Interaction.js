@@ -8,7 +8,7 @@ import { PercentilePlot } from './PercentilePlot/PercentilePlot';
 
 import './D3Interaction.css';
 
-export function D3Interaction({ input_data, output_data, input_settings }) {
+export function D3Interaction({ input_data, output_data, input_settings, clean }) {
     const [percentilePlotsData, setPercentilePlotsData] = useState({});
     const brushListKey = useRef(0);
 
@@ -86,7 +86,7 @@ export function D3Interaction({ input_data, output_data, input_settings }) {
 
             const sample_stroke = layout === 'vertical' ? samples / 100 : dimensions / 100;
 
-            const div = d3.select(div_ref.current);
+            // const div = d3.select(div_ref.current);
             const svg = d3.select(svg_ref.current);
             svg.selectAll('*').remove();
             const rows = svg.append('g').attr('class', 'rows');
@@ -362,6 +362,11 @@ export function D3Interaction({ input_data, output_data, input_settings }) {
             });
         }
     }, [interestingness]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    useEffect(() => {
+        console.log(clean);
+        clearPercentilePlots();
+    }, [clean]);
 
     return (
         <div className="interaction">
