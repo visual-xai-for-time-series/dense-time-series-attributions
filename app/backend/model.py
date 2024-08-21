@@ -363,8 +363,8 @@ def get_all_available_JSON_files(download=True):
     data_path = 'data/'
     if download:
         files = [
-            # ('https://data.time-series-xai.dbvis.de/davots/cnn-forda.json', 'cnn-forda.json'),
-            # ('https://data.time-series-xai.dbvis.de/davots/resnet-forda-results.json', 'resnet-forda-results.json')
+            ('https://data.time-series-xai.dbvis.de/davots/cnn-forda.json', 'cnn-forda.json'),
+            ('https://data.time-series-xai.dbvis.de/davots/resnet-forda-results.json', 'resnet-forda.json')
         ]
         for f in files:
             download_json(f[0], os.path.join(data_path, f[1]))
