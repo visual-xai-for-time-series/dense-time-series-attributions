@@ -9,12 +9,17 @@ For instance, patterns the neural network learns for the classification of sampl
 
 MLVIS 2023 freeze: [076dffd54a1197da9bb88411887b7290fcae81cf](https://github.com/visual-xai-for-time-series/dense-time-series-attributions/tree/076dffd54a1197da9bb88411887b7290fcae81cf)
 
-EUROVIS 2024 current WIP.
+VDS 2024 current WIP.
 
 ### Data and Model to explore:
 
 Dataset: Ford A (Training: 3601 / Test: 1320)  
-Model: 3 Conv1D (5, 10, 50, kernel=3, stride=2), 2 FC (100, 2)  
+Model: 3 Conv1D (feature-maps=[5, 10, 50], kernel=3, stride=2), 2 FC (100, 2)  
+Attribution: IntegratedGradients, ShapleyValueSampling  
+Activations: 100 FC
+
+Dataset: Ford A (Training: 3601 / Test: 1320)  
+Model: 3 ResNet Blocks Conv1D (feature-maps=[10, 20, 20], kernel=[5, 3, 1] per Block, stride=1), 2 FC (100, 2)  
 Attribution: IntegratedGradients, ShapleyValueSampling  
 Activations: 100 FC
 

@@ -285,9 +285,9 @@ class InterestingnessData(BaseModel):
             return self.raw_histogram[method]
         if base_data == 'activations_histogram':
             return self.activations_histogram[method]
-        if base_data == 'labels':
+        if base_data == 'labels' and method in self.labels:
             return self.labels[method]
-        if base_data == 'predictions':
+        if base_data == 'predictions' and method in self.predictions:
             return self.predictions[method]
         if base_data == 'attributions':
             return self.attributions[attribution][method]
@@ -363,8 +363,8 @@ def get_all_available_JSON_files(download=True):
     data_path = 'data/'
     if download:
         files = [
-            ('https://data.time-series-xai.dbvis.de/davots/cnn-forda.json', 'cnn-forda.json'),
-            ('https://data.time-series-xai.dbvis.de/davots/resnet-forda.json', 'resnet-forda.json'),
+            # ('https://data.time-series-xai.dbvis.de/davots/cnn-forda.json', 'cnn-forda.json'),
+            # ('https://data.time-series-xai.dbvis.de/davots/resnet-forda-results.json', 'resnet-forda-results.json')
         ]
         for f in files:
             download_json(f[0], os.path.join(data_path, f[1]))

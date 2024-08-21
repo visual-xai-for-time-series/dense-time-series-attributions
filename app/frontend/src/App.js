@@ -36,8 +36,8 @@ function App() {
         parameter_height -
         10;
 
-    let start_layout = 'horizontal';
-    let start_dataset = 'cnn-forda';
+    const start_layout = 'horizontal';
+    const start_dataset = '';
 
     let reloader = false;
 
@@ -91,8 +91,11 @@ function App() {
         height: null,
         data: null,
         dataset: null,
+        stage: null,
         interestingness: null,
     });
+
+    const [clean, setClean] = useState('');
 
     const [error, setError] = useState(null);
 
@@ -241,6 +244,7 @@ function App() {
                     data_lengths: data_lengths,
                     data_lengths_scaled: data_lengths_scaled,
                     dataset: settings.dataset,
+                    stage: cur_stage,
                     interestingness: interestingness,
                 };
                 setInteractions(interactions);
@@ -285,6 +289,7 @@ function App() {
                             input_data={interactions}
                             output_data={labelElement}
                             input_settings={settings}
+                            clean={clean}
                         ></D3Interaction>
                     </Item>
                 </Grid>
@@ -294,6 +299,7 @@ function App() {
                     output_data={changeUrlParam}
                     input_settings={settings}
                     output_settings={changeSettings}
+                    clean={setClean}
                 ></Parameters>
             </Grid>
             <Box

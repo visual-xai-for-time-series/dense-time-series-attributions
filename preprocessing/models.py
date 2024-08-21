@@ -80,8 +80,8 @@ class ResNet(nn.Module):
 
 
 class SimpleCNN(nn.Module):
-    def __init__(self):
-        super(SimpleCNN, self).__init__()
+    def __init__(self, num_pred_classes=2):
+        super().__init__()
         
         self.conv1 = nn.Sequential(
             nn.Conv1d(1, 10, kernel_size=3, stride=1),
@@ -104,7 +104,7 @@ class SimpleCNN(nn.Module):
             nn.ReLU(inplace=True)
         )
         self.fc2 = nn.Sequential(
-            nn.Linear(100, 2),
+            nn.Linear(100, num_pred_classes),
             nn.Softmax(-1)
         )
         
