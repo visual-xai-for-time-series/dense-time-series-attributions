@@ -146,8 +146,9 @@ function App() {
 
         reloader = !reloader;
 
+        const dataset = settings.dataset !== '' ? `/${settings.dataset}` : '';
         setUrlParam(
-            `${settings.dataset}?start=${start}&end=${end}&stage=${stage}&ordering_base=${ordering_base}&ordering_method=${ordering_method}&attribution_method=${attribution_method}&reloader=${reloader}`
+            `${dataset}?start=${start}&end=${end}&stage=${stage}&ordering_base=${ordering_base}&ordering_method=${ordering_method}&attribution_method=${attribution_method}&reloader=${reloader}`
         );
     };
 
@@ -161,7 +162,7 @@ function App() {
             behavior: 'smooth',
         });
 
-        const url = base_url + '/api/getPixelImage/' + url_param;
+        const url = base_url + '/api/getPixelImage' + url_param;
         console.log(url);
 
         d3.json(url, {
@@ -259,7 +260,12 @@ function App() {
     }, [url_param]); // eslint-disable-line react-hooks/exhaustive-deps
 
     if (error) {
-        return <div>Error: {error.message}</div>;
+        return (
+            <div>
+                Error: {error.message}
+                {/* <CircularProgress /> */}
+            </div>
+        );
     }
 
     const steps = [
