@@ -86,7 +86,7 @@ export function Settings({ input_settings, output_settings }) {
                     ...local_settings,
                     available_colormaps: data,
                     available_datasets: datasets,
-                    default_dataset: default_dataset,
+                    dataset: default_dataset,
                 });
             });
         });
@@ -104,7 +104,7 @@ export function Settings({ input_settings, output_settings }) {
             setSettings({
                 ...local_settings,
                 available_datasets: datasets,
-                default_dataset: default_dataset,
+                dataset: default_dataset,
             });
         });
     }, []); // eslint-disable-line react-hooks/exhaustive-deps

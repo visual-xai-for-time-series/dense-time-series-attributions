@@ -116,8 +116,7 @@ async def serve_image(settings: Settings, file_name: str = '', start: int = 0, e
             else:
                 data_to_show.append(k)
     
-    print(data_to_show)
-    print(settings)
+    print(f'General settings: {settings}')
     
     loaded_data = load_file(file_name)
 
@@ -172,7 +171,6 @@ async def serve_image(settings: Settings, file_name: str = '', start: int = 0, e
     sliced_ordering = ordering[start:end]
 
     for k in collected_data:
-        print(k)
         max_samples = max(max_samples, len(collected_data[k]))
         ret_tmp[k] = collected_data[k][sliced_ordering].tolist()
     sliced_ordering = sliced_ordering.tolist()
@@ -205,14 +203,10 @@ async def serve_image(settings: Settings, file_name: str = '', start: int = 0, e
 
     data_for_image = []
     proportion_for_image = []
-    
-    print(ret_tmp.keys())
 
     for k in data_generation:
         k, norm, cmap, quant = k
-        print(k)
         if k in ret_tmp and k in data_to_show:
-            print(k)
             d = np.array(ret_tmp[k])
             # d = i.discretizer(d)
             d = i.normalize(d, norm)
@@ -278,6 +272,7 @@ async def get_available_datasets():
 
 
 @app.post('/api/getTimeSeriesForIdc')
+@app.post('/api/getTimeSeriesForIdc/')
 @app.post('/api/getTimeSeriesForIdc/{file_name}')
 async def get_time_series_for_idc(body: dict, file_name: str = '', stage: str = ''):
 
