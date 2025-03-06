@@ -44,12 +44,9 @@ def load_file(file_name):
 
 
 json_files = m.get_all_available_JSON_files()
-print(json_files)
+print(f'Base data files: {", ".join(json_files)}')
 
-for json_file in json_files:
-    cache[json_file[:-5]] = m.parse_JSON_file(json_file)
-
-print(cache.keys())
+finished_pre_loading = False
 
 
 class Settings(BaseModel):
@@ -80,11 +77,29 @@ class Settings(BaseModel):
     predictions_colormap: str = 'viridis'
 
 
+@app.on_event('startup')
+async def startup_event():
+    global cache
+    global finished_pre_loading
+    
+    for json_file in json_files:
+        cache[json_file[:-5]] = m.parse_JSON_file(json_file)
+
+    print(f'Finished loading the files: {", ".join(cache.keys())}')
+    finished_pre_loading = True
+
+
 @app.post('/api/getPixelImage')
+@app.post('/api/getPixelImage/')
 @app.post('/api/getPixelImage/{file_name}')
 async def serve_image(settings: Settings, file_name: str = '', start: int = 0, end: int = -1, stage: str = '', ordering_base: str = '', ordering_method: str = '', attribution_method: str = ''):
+    
+    if not finished_pre_loading:
+        raise HTTPException(status_code=5, detail='Data not loaded yet')
+    
+
     if file_name == '':
-        file_name = list(cache.keys())[0]
+        file_name = m.get_default_file_name()
     
     resolution_width = settings.resolution_width
     resolution_height = settings.resolution_height
@@ -257,7 +272,9 @@ async def get_available_colors():
 
 @app.get('/api/getAvailableDatasets')
 async def get_available_datasets():
-    return JSONResponse(content=list(cache.keys()))
+    default_dataset = m.get_default_file_name()
+    return_content = {'datasets': list(cache.keys()), 'default': default_dataset}
+    return JSONResponse(content=return_content)
 
 
 @app.post('/api/getTimeSeriesForIdc')
@@ -265,7 +282,7 @@ async def get_available_datasets():
 async def get_time_series_for_idc(body: dict, file_name: str = '', stage: str = ''):
 
     if file_name == '':
-        file_name = list(cache.keys())[0]
+        file_name = m.get_default_file_name()
 
     if 'idc' not in body:
         return 200

@@ -14,6 +14,25 @@ from pydantic import BaseModel, validator
 from pydantic.tools import parse_obj_as
 
 
+files = [
+    # ('https://data.time-series-xai.dbvis.de/davots/old/cnn-forda.json', 'cnn-forda.json'),
+    # ('https://data.time-series-xai.dbvis.de/davots/old/resnet-forda-results.json', 'resnet-forda.json')
+    ('https://data.time-series-xai.dbvis.de/davots/cnn-forda-results.json', 'cnn-forda.json'),
+    ('https://data.time-series-xai.dbvis.de/davots/resnet-forda-results.json', 'resnet-forda.json'),
+    ('https://data.time-series-xai.dbvis.de/davots/cnn-fordb-results.json', 'cnn-fordb.json'),
+    ('https://data.time-series-xai.dbvis.de/davots/resnet-fordb-results.json', 'resnet-fordb.json'),
+    ('https://data.time-series-xai.dbvis.de/davots/cnn-ecg5000-results.json', 'cnn-ecg5000.json'),
+    ('https://data.time-series-xai.dbvis.de/davots/resnet-ecg5000-results.json', 'resnet-ecg5000.json'),
+]
+
+
+default_file = 'resnet-forda'
+
+
+def get_default_file_name():
+    return default_file
+
+
 def list_to_np(x):
     return np.array(x)
 
@@ -362,16 +381,6 @@ def download_json(url, file_path):
 def get_all_available_JSON_files(download=True):
     data_path = 'data/'
     if download:
-        files = [
-            # ('https://data.time-series-xai.dbvis.de/davots/old/cnn-forda.json', 'cnn-forda.json'),
-            # ('https://data.time-series-xai.dbvis.de/davots/old/resnet-forda-results.json', 'resnet-forda.json')
-            ('https://data.time-series-xai.dbvis.de/davots/cnn-forda-results.json', 'cnn-forda.json'),
-            ('https://data.time-series-xai.dbvis.de/davots/resnet-forda-results.json', 'resnet-forda.json'),
-            ('https://data.time-series-xai.dbvis.de/davots/cnn-fordb-results.json', 'cnn-fordb.json'),
-            ('https://data.time-series-xai.dbvis.de/davots/resnet-fordb-results.json', 'resnet-fordb.json'),
-            ('https://data.time-series-xai.dbvis.de/davots/cnn-ecg5000-results.json', 'cnn-ecg5000.json'),
-            ('https://data.time-series-xai.dbvis.de/davots/resnet-ecg5000-results.json', 'resnet-ecg5000.json'),
-        ]
         for f in files:
             download_json(f[0], os.path.join(data_path, f[1]))
     return [file for file in os.listdir(data_path) if file.endswith('.json')]

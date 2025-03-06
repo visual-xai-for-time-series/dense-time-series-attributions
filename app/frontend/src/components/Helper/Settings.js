@@ -76,12 +76,17 @@ export function Settings({ input_settings, output_settings }) {
 
             d3.json(base_url + '/api/getAvailableDatasets', {
                 method: 'GET',
-            }).then((datasets) => {
-                console.log(datasets);
+            }).then((available_datasets) => {
+                console.log(available_datasets);
+
+                const default_dataset = available_datasets.default;
+                const datasets = available_datasets.datasets;
+
                 setSettings({
                     ...local_settings,
                     available_colormaps: data,
                     available_datasets: datasets,
+                    default_dataset: default_dataset,
                 });
             });
         });
@@ -90,11 +95,16 @@ export function Settings({ input_settings, output_settings }) {
     useEffect(() => {
         d3.json(base_url + '/api/getAvailableDatasets', {
             method: 'GET',
-        }).then((data) => {
-            console.log(data);
+        }).then((available_datasets) => {
+            console.log(available_datasets);
+
+            const default_dataset = available_datasets.default;
+            const datasets = available_datasets.datasets;
+
             setSettings({
                 ...local_settings,
-                available_datasets: data,
+                available_datasets: datasets,
+                default_dataset: default_dataset,
             });
         });
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
